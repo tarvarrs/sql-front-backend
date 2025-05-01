@@ -1,0 +1,79 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Dict, List
+
+from database import get_db
+from src.models.user import User
+from src.models.progress import UserProgress
+from src.models.achievement import Achievement, UserAchievement
+from src.utils.auth import get_current_user
+from src.schemas.user import UserPublic
+
+router = APIRouter(prefix="/api/profile", tags=["profile"])
+
+@router.get("/me", response_model=UserPublic)
+async def get_my_profile(
+    current_user: User = Depends(get_current_user)
+):
+    """Возвращает login и total_score текущего пользователя"""
+    return current_user
+
+@router.get("/tasks_progress")
+async def get_my_progress(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Возвращает прогресс по задачам текущего пользователя"""
+    result = await db.execute(select(UserProgress).where(UserProgress.user_id == current_user.user_id))
+    progress = result.scalars().first()
+    
+    if not progress:
+        return {
+            "easy_solved": 0,
+            "medium_solved": 0,
+            "hard_solved": 0
+        }
+    
+    return {
+        "easy_solved": progress.easy_tasks_solved,
+        "medium_solved": progress.medium_tasks_solved,
+        "hard_solved": progress.hard_tasks_solved
+    }
+
+@router.get("/achievements")
+async def get_my_achievements(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Возвращает достижения пользователя, сгруппированные по категориям"""
+    result = await db.execute(
+        select(
+            Achievement.category_name,
+            Achievement.icon,
+            Achievement.name,
+            Achievement.description,
+            Achievement.historical_info
+        )
+        .join(UserAchievement)
+        .where(UserAchievement.user_id == current_user.user_id)
+    )
+    achievements = result.all()
+    
+    grouped_achievements: Dict[str, List] = {}
+    
+    for ach in achievements:
+        category = ach.category_name
+        achievement_data = {
+            "icon": ach.icon,
+            "name": ach.name,
+            "description": ach.description,
+            "historical_info": ach.historical_info
+        }
+        
+        if category not in grouped_achievements:
+            grouped_achievements[category] = []
+        
+        grouped_achievements[category].append(achievement_data)
+    
+    return grouped_achievements
