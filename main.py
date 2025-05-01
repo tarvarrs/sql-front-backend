@@ -11,6 +11,9 @@ import uvicorn
 # from models.user import Base, User, PasswordHash
 # from database import engine, Base
 from src.api.auth import router as auth_router
+from src.api.progress import router as progress_router
+# from src.api.achievement import router as achievement_router
+from src.api.profile import router as profile_router
 
 
 app = FastAPI()
@@ -25,10 +28,15 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # https://localhost:
+    allow_origins=["http://localhost:9000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth_router)
+app.include_router(progress_router)
+# app.include_router(achievement_router)
+app.include_router(profile_router)
 
 @app.get("/", summary="Main endpoint", tags=["Home endpoints"])
 def main():
