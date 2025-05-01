@@ -176,3 +176,5 @@ cython_debug/
 #Ignore for mac temporary files
 *.DS_Store
 ._*
+
+documentation/
