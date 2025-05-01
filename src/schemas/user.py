@@ -24,6 +24,9 @@ class UserPublic(UserBase):
     user_id: int
     total_score: int | None = None
 
+    class Config:
+        from_attributes = True
+
 # class UserOut(BaseModel):
 #     user_id: int
 #     login: str
