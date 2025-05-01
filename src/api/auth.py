@@ -17,7 +17,6 @@ async def register(
     user_data: UserCreate,
     user_repo: UserRepository = Depends(get_user_repository),
 ):
-    # Проверка существования пользователя
     if await user_repo.get_user_by_login(user_data.login):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -59,7 +58,6 @@ async def login(
 
 @router.post("/logout")
 async def logout():
-    # В JWT логаут обычно клиентский - просто удаляем токен на клиенте
     return {"message": "Successfully logged out"}
 
 @router.get("/me", response_model=UserPublic)

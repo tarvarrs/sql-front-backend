@@ -2,8 +2,6 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Identity
 from sqlalchemy.orm import relationship, declarative_base
 from database import Base
 
-# Base = declarative_base()
-
 class User(Base):
     __tablename__ = "users"
 
@@ -13,6 +11,8 @@ class User(Base):
     total_score = Column(Integer, default=0)
 
     password_rel = relationship("PasswordHash", back_populates="user_rel", uselist=False, cascade="all, delete-orphan")
+    progress = relationship("UserProgress", back_populates="user", uselist=False)
+    achievements = relationship("UserAchievement", back_populates="user")
 
 
 class PasswordHash(Base):
