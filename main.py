@@ -14,7 +14,7 @@ from src.api.auth import router as auth_router
 from src.api.progress import router as progress_router
 # from src.api.achievement import router as achievement_router
 from src.api.profile import router as profile_router
-
+from src.api.task import router as task_router
 
 app = FastAPI()
 
@@ -37,6 +37,7 @@ app.include_router(auth_router)
 app.include_router(progress_router)
 # app.include_router(achievement_router)
 app.include_router(profile_router)
+app.include_router(task_router)
 
 @app.get("/", summary="Main endpoint", tags=["Home endpoints"])
 def main():
