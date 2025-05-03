@@ -1,6 +1,8 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.task import Task, TaskSolved
+from typing import Dict, List
+from collections import defaultdict
 
 class TaskRepository:
     def __init__(self, session: AsyncSession):
@@ -38,3 +40,48 @@ class TaskRepository:
         self.session.add(solved_task)
         await self.session.commit()
         return solved_task
+
+    async def get_all_tasks_grouped(self) -> Dict[int, List[dict]]:
+        """Возвращает все задания, сгруппированные по mission_id"""
+        result = await self.session.execute(
+            select(
+                Task.mission_id,
+                Task.task_id,
+                Task.task_global_id,
+                Task.title
+            ).order_by(Task.mission_id, Task.task_id)
+        )
+
+        grouped = defaultdict(list)
+        for task in result.all():
+            grouped[task.mission_id].append({
+                "task_id": task.task_id,
+                "task_global_id": task.task_global_id,
+                "title": task.title
+            })
+        
+        return dict(grouped)
+
+    async def get_user_solved_tasks(self, user_id: int) -> Dict[int, List[dict]]:
+        """Возвращает решенные пользователем задания, сгруппированные по mission_id"""
+        result = await self.session.execute(
+            select(
+                Task.mission_id,
+                Task.task_id,
+                Task.task_global_id,
+                Task.title
+            )
+            .join(TaskSolved, Task.task_global_id == TaskSolved.task_global_id)
+            .where(TaskSolved.user_id == user_id)
+            .order_by(Task.mission_id, Task.task_id)
+        )
+        
+        grouped = defaultdict(list)
+        for task in result.all():
+            grouped[task.mission_id].append({
+                "task_id": task.task_id,
+                "task_global_id": task.task_global_id,
+                "title": task.title
+            })
+        
+        return dict(grouped)

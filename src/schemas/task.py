@@ -32,3 +32,26 @@ class TasksCount(BaseModel):
 class TaskSolvedCreate(BaseModel):
     user_id: int
     task_global_id: int
+
+class SQLResponse(BaseModel):
+    columns: List[str]
+    data: List[List[Any]]
+    row_count: int
+
+class SQLRequest(BaseModel):
+    sql_query: str
+
+class ValidationResult(BaseModel):
+    is_correct: bool
+    message: Optional[str] = None
+
+class TaskShortInfo(BaseModel):
+    task_id: int
+    task_global_id: int
+    title: str
+
+class MissionsResponse(BaseModel):
+    missions: Dict[int, List[TaskShortInfo]]  # {mission_id: [task1, task2]}
+
+class SolvedTasksResponse(BaseModel):
+    solved_missions: Dict[int, List[TaskShortInfo]]  # {mission_id: [task1, task2]}
