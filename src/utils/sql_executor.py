@@ -1,3 +1,4 @@
+from datetime import datetime, date
 from typing import Dict, List, Any
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncConnection
 from sqlalchemy import text
@@ -24,7 +25,15 @@ class SQLExecutor:
 
                 if result.returns_rows:
                     columns = list(result.keys())
-                    data = [list(row) for row in result.fetchall()]
+                    data = []
+                    for row in result.fetchall():
+                        processed_row = []
+                        for value in row:
+                            if isinstance(value, (date, datetime)):
+                                processed_row.append(value.isoformat())
+                            else:
+                                processed_row.append(value)
+                        data.append(processed_row)
                     return {
                         "columns": columns,
                         "data": data,
