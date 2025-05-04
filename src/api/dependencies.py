@@ -16,3 +16,6 @@ async def get_achievement_repository(session=Depends(get_db)) -> AchievementRepo
 
 async def get_task_repository(session=Depends(get_db)) -> TaskRepository:
     return TaskRepository(session)
+
+async def get_achievement_repository(session=Depends(get_db)) -> AchievementRepository:
+    return AchievementRepository(session)
