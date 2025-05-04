@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
+from src.models.task import Task
+
 class TaskBase(BaseModel):
     mission_id: int
     title: str
@@ -14,9 +16,19 @@ class TaskCreate(TaskBase):
 
 class TaskInfo(TaskBase):
     task_global_id: int
+    task_id: int
+    title: str
+    is_solved: bool
 
     class Config:
         from_attributes = True
+
+class MissionTasks(BaseModel):
+    mission_id: int
+    tasks: List[TaskInfo]
+
+class GroupedTasksResponse(BaseModel):
+    missions: Dict[int, MissionTasks]
 
 class TaskClue(BaseModel):
     clue: str
@@ -49,9 +61,22 @@ class TaskShortInfo(BaseModel):
     task_id: int
     task_global_id: int
     title: str
+    is_solved: bool
 
 class MissionsResponse(BaseModel):
     missions: Dict[int, List[TaskShortInfo]]  # {mission_id: [task1, task2]}
 
 class SolvedTasksResponse(BaseModel):
     solved_missions: Dict[int, List[TaskShortInfo]]  # {mission_id: [task1, task2]}
+
+class TaskWithStatus(BaseModel):
+    task_id: int
+    task_global_id: int
+    mission_id: int
+
+class TaskWithStatusResponse(BaseModel):
+    task_id: int
+    mission_id: int
+    title: str
+    description: str
+    is_solved: bool

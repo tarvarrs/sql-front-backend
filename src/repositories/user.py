@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
 from src.models.user import User, PasswordHash
@@ -37,3 +37,14 @@ class UserRepository:
         db_password_hash = result.scalars().first()
 
         return bcrypt.checkpw(password.encode('utf-8'), db_password_hash.encode('utf-8'))
+    
+    async def get_top_users(self, limit: int=10) -> list[tuple[str, int]]:
+        result = await self.session.execute(
+            select(
+                User.login,
+                User.total_score
+            )
+            .order_by(User.total_score.desc())
+            .limit(limit)
+        )
+        return result.all()

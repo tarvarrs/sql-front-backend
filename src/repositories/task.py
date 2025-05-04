@@ -1,4 +1,4 @@
-from sqlalchemy import select, func
+from sqlalchemy import select, func, outerjoin, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.task import Task, TaskSolved
 from typing import Dict, List
@@ -61,6 +61,35 @@ class TaskRepository:
             })
         
         return dict(grouped)
+    
+    async def get_all_tasks_grouped_with_status(self, user_id: int) -> Dict[int, List[dict]]:
+        req = (
+            select(
+                Task.mission_id,
+                Task.task_id,
+                Task.task_global_id,
+                Task.title,
+                TaskSolved.task_global_id.isnot(None).label("is_solved")
+            )
+            .select_from(Task)
+            .join(
+                TaskSolved,
+                (Task.task_global_id == TaskSolved.task_global_id) &
+                (TaskSolved.user_id == user_id),
+                isouter=True
+            )
+            .order_by(Task.mission_id, Task.task_id)
+        )
+        result = await self.session.execute(req)
+        grouped = defaultdict(list)
+        for row in result.all():
+            grouped[row.mission_id].append({
+                "task_id": row.task_id,
+                "task_global_id": row.task_global_id,
+                "title": row.title,
+                "is_solved": bool(row.is_solved)
+            })
+        return dict(grouped)
 
     async def get_user_solved_tasks(self, user_id: int) -> Dict[int, List[dict]]:
         """Возвращает решенные пользователем задания, сгруппированные по mission_id"""
@@ -85,3 +114,65 @@ class TaskRepository:
             })
         
         return dict(grouped)
+
+    async def get_tasks_grouped_by_mission(self, user_id: int) -> Dict[int, List[dict]]:
+        stmt = (
+            select(
+                Task.mission_id,
+                Task.task_id,
+                Task.task_global_id,
+                Task.title,
+                TaskSolved.task_global_id.isnot(None).label("is_solved")
+            )
+            .select_from(Task)
+            .join(
+                TaskSolved,
+                (Task.task_global_id == TaskSolved.task_global_id) & 
+                (TaskSolved.user_id == user_id),
+                isouter=True
+            )
+            .order_by(Task.mission_id, Task.task_id)
+        )
+        
+        result = await self.session.execute(stmt)
+        
+        grouped = defaultdict(list)
+        for row in result:
+            grouped[row.mission_id].append({
+                "task_id": row.task_id,
+                "task_global_id": row.task_global_id,
+                "title": row.title,
+                "is_solved": bool(row.is_solved)
+            })
+        
+        return dict(grouped)
+
+    async def get_task_info_with_status(
+        self, 
+        mission_id: int, 
+        task_id: int,
+        user_id: int
+        ) -> tuple[Task, bool]:
+        """Возвращает задачу и статус решения пользователем"""
+        task_result = await self.session.execute(
+            select(Task)
+            .where(
+                (Task.mission_id == mission_id) & 
+                (Task.task_id == task_id)
+            )
+        )
+        task = task_result.scalars().first()
+        
+        if not task:
+            return None, False
+        
+        solved_result = await self.session.execute(
+            select(exists()
+            .where(
+                (TaskSolved.task_global_id == task.task_global_id) &
+                (TaskSolved.user_id == user_id))
+                )
+            )
+        is_solved = solved_result.scalar()
+        
+        return task, is_solved
