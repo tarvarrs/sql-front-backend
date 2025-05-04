@@ -10,21 +10,19 @@ from src.models.achievement import Achievement, UserAchievement
 from src.utils.auth import get_current_user
 from src.schemas.user import UserPublic
 
-router = APIRouter(prefix="/api/profile", tags=["profile"])
+router = APIRouter(prefix="/api/profile", tags=["Профиль"])
 
-@router.get("/me", response_model=UserPublic)
+@router.get("/me", summary="Логин и баллы", response_model=UserPublic)
 async def get_my_profile(
     current_user: User = Depends(get_current_user)
 ):
-    """Возвращает login и total_score текущего пользователя"""
     return current_user
 
-@router.get("/tasks_progress")
+@router.get("/tasks_progress", summary="Прогресс по задачам")
 async def get_my_progress(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Возвращает прогресс по задачам текущего пользователя"""
     result = await db.execute(select(UserProgress).where(UserProgress.user_id == current_user.user_id))
     progress = result.scalars().first()
     
@@ -41,12 +39,11 @@ async def get_my_progress(
         "hard_solved": progress.hard_tasks_solved
     }
 
-@router.get("/achievements")
+@router.get("/achievements", summary="Имеющиеся ачивки")
 async def get_my_achievements(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Возвращает достижения пользователя, сгруппированные по категориям"""
     result = await db.execute(
         select(
             Achievement.category_name,
