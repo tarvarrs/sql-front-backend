@@ -36,6 +36,6 @@ class UserPublic(UserBase):
 #     class Config:
 #         orm_mode = True
 
-# class UserLogin(BaseModel):
-#     login: str
-#     password: str
+class UserLogin(BaseModel):
+    login: str
+    password: str

@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import timedelta
 from typing import Annotated
 
-from src.schemas.user import UserCreate, UserPublic
+from src.schemas.user import UserCreate, UserPublic, UserLogin
 from src.schemas.token import Token
 from src.utils.auth import create_access_token, get_current_user, security
 from src.repositories.user import UserRepository
@@ -38,12 +38,11 @@ async def register(
 
 @router.post("/login", response_model=Token)
 async def login(
-    login: str,
-    password: str,
+    user_data: UserLogin,
     user_repo: UserRepository = Depends(get_user_repository),
 ):
-    user = await user_repo.get_user_by_login(login)
-    if not user or not await user_repo.verify_password(login, password):
+    user = await user_repo.get_user_by_login(user_data.login)
+    if not user or not await user_repo.verify_password(user_data.login, user_data.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect login or password",
@@ -60,8 +59,8 @@ async def login(
 async def logout():
     return {"message": "Successfully logged out"}
 
-@router.get("/me", response_model=UserPublic)
-async def read_current_user(
-    current_user: User = Depends(get_current_user),
-):
-    return current_user
+# @router.get("/me", response_model=UserPublic)
+# async def read_current_user(
+#     current_user: User = Depends(get_current_user),
+# ):
+#     return current_user
