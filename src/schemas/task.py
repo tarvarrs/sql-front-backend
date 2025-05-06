@@ -80,3 +80,17 @@ class TaskWithStatusResponse(BaseModel):
     title: str
     description: str
     is_solved: bool
+
+class AchievementAward(BaseModel):
+    achievement_id: int
+    name: str
+    description: str
+    icon: str
+
+class TaskSubmissionResult(BaseModel):
+    was_solved_before: bool
+    points_earned: int
+    points_penalty: int
+    message: str
+    is_correct: bool
+    awarded_achievements: list[AchievementAward]

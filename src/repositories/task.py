@@ -1,8 +1,13 @@
-from sqlalchemy import select, func, outerjoin, exists
+from fastapi import HTTPException
+from sqlalchemy import select, func, outerjoin, exists, update, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.models.progress import UserProgress
+from src.models.user import User
 from src.models.task import Task, TaskSolved
+from src.repositories.achievement import AchievementRepository
 from typing import Dict, List
 from collections import defaultdict
+from config import settings
 
 class TaskRepository:
     def __init__(self, session: AsyncSession):
@@ -36,7 +41,7 @@ class TaskRepository:
 
     async def add_solved_task(self, user_id: int, task_id: int) -> TaskSolved:
         """Добавляет запись о решенной задаче"""
-        solved_task = TaskSolved(user_id=user_id, task_id=task_id)
+        solved_task = TaskSolved(user_id=user_id, task_global_id=task_id)
         self.session.add(solved_task)
         await self.session.commit()
         return solved_task
@@ -176,3 +181,99 @@ class TaskRepository:
         is_solved = solved_result.scalar()
         
         return task, is_solved
+
+    async def check_and_reward_task(
+        self,
+        user_id: int,
+        mission_id: int,
+        task_id: int,
+        is_correct: bool
+    ) -> dict:
+
+        task = await self.session.execute(
+            select(Task.task_global_id)
+            .where(
+                (Task.mission_id == mission_id) &
+                (Task.task_id == task_id)
+            )
+        )
+        task_global_id = task.scalar()
+        if not task_global_id:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        already_solved = await self.session.execute(
+            select(exists().where(
+                (TaskSolved.user_id == user_id) &
+                (TaskSolved.task_global_id == task_global_id)
+            ))
+        )
+        already_solved = already_solved.scalar()
+        points_earned = 0
+        points_penalty = 0
+        message = ""
+
+        if is_correct:
+            if not already_solved:
+                points = settings.TASK_POINTS[mission_id] if mission_id < len(settings.TASK_POINTS) else 0
+                points_earned = points
+                await self.session.execute(
+                    update(User)
+                    .where(User.user_id == user_id)
+                    .values(total_score=User.total_score + points)
+                )
+                self.session.add(TaskSolved(
+                    user_id=user_id,
+                    task_global_id=task_global_id
+                ))
+                progress_field = [
+                    "easy_tasks_solved",
+                    "medium_tasks_solved", 
+                    "hard_tasks_solved"
+                ][mission_id]
+                await self.session.execute(
+                    update(UserProgress)
+                    .where(UserProgress.user_id == user_id)
+                    .values(**{progress_field: getattr(UserProgress, progress_field) + 1})
+                )
+                message = f"Правильно! Заработано {points} баллов"
+            else:
+                message = f"Правильно! За повторное решение баллы не начисляются"
+        else:
+            if not already_solved:
+                points_penalty = int(settings.TASK_POINTS[mission_id] * 0.1) if mission_id < len(settings.TASK_POINTS) else 0
+                await self.session.execute(
+                    update(User)
+                    .where(User.user_id == user_id)
+                    .values(total_score=User.total_score - points_penalty)
+                )
+                message = f"Ответ неверный! Списано {points_penalty} баллов"
+            else:
+                message = f"Ответ неверный! За повторное решение баллы не списываются"
+        await self.session.commit()
+
+        task_tags_result = await self.session.execute(
+            select(Task.tags).where(
+                (Task.mission_id == mission_id) &
+                (Task.task_id == task_id)
+            )
+        )
+        task_tags = task_tags_result.scalar() or []
+        
+        if is_correct and task_tags:
+            achievement_repo = AchievementRepository(self.session)
+            awarded_achievements = await achievement_repo.check_and_award_achievements(
+                user_id=user_id,
+                task_tags=task_tags
+            )
+        else:
+            awarded_achievements = []
+        
+        await self.session.commit()
+
+        return {
+            "was_solved_before": already_solved,
+            "points_earned": points_earned,
+            "points_penalty": points_penalty,
+            "message": message,
+            "awarded_achievements": awarded_achievements
+        }

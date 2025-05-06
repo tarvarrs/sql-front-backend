@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("ACCESS_TOKEN_SECRET")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    TASK_POINTS: list = [100, 300, 500]
 
     class Config:
         env_file = ".env"
