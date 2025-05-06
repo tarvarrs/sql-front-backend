@@ -2,6 +2,7 @@ from datetime import datetime, date
 from typing import Dict, List, Any
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncConnection
 from sqlalchemy import text
+from sqlalchemy.exc import StatementError
 from asyncpg.exceptions import QueryCanceledError
 from fastapi import HTTPException
 from config import settings
@@ -47,10 +48,10 @@ class SQLExecutor:
                 }
         except QueryCanceledError:
             raise HTTPException(status_code=400, detail="Query timeout exceeded")
-        except Exception as e:
+        except StatementError as e:
             raise HTTPException(
                 status_code=400,
-                detail=f"SQL execution error: {str(e)}"
+                detail=f"SQL execution error: {str(e.orig)}"
             )
     def _validate_sql(self, sql_query: str):
         """Базовая проверка SQL-запроса на безопасность"""
