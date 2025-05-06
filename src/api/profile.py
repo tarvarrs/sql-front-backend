@@ -6,7 +6,7 @@ from typing import Dict, List
 from database import get_db
 from src.models.user import User
 from src.models.progress import UserProgress
-from src.models.achievement import Achievement, UserAchievement
+from src.models.achievement import Achievement, UsersAchievements, UserAchievementProgress
 from src.utils.auth import get_current_user
 from src.schemas.user import UserPublic
 
@@ -52,8 +52,8 @@ async def get_my_achievements(
             Achievement.description,
             Achievement.historical_info
         )
-        .join(UserAchievement)
-        .where(UserAchievement.user_id == current_user.user_id)
+        .join(UsersAchievements)
+        .where(UsersAchievements.user_id == current_user.user_id)
     )
     achievements = result.all()
     

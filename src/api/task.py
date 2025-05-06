@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any
 from src.api.dependencies import get_task_repository
@@ -11,6 +11,7 @@ from src.schemas.task import (
     TaskInfo,
     TaskClue,
     TaskExpectedResult,
+    TaskSubmissionResult,
     TasksCount,
     TaskSolvedCreate,
     SQLRequest,
@@ -110,7 +111,10 @@ async def run_sql_query(
     try:
         return await sql_executor.execute_sql(request.sql_query)
     except HTTPException as e:
-        raise e
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ошибка во время выполнения SQL: {str(e.detail)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -119,11 +123,13 @@ async def run_sql_query(
 
 @router.post("/{mission_id}/tasks/{task_id}/submit",
             summary="Проверка ответа",
-            response_model=ValidationResult)
+            response_model=TaskSubmissionResult
+            )
 async def submit_sql_query(
     mission_id: int,
     task_id: int,
     request: SQLRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     repo = TaskRepository(db)
@@ -133,8 +139,6 @@ async def submit_sql_query(
     
     user_result = await sql_executor.execute_sql(request.sql_query)
     expected_result = task.expected_result
-    # print(f"DEBUG\nexpected_result\n{expected_result}\n")
-    # print(f"DEBUG\nuser_result\n{user_result}\n")
 
     if not expected_result:
         raise HTTPException(status_code=500, detail="No solution for this task yet")
@@ -143,10 +147,24 @@ async def submit_sql_query(
         user_result["columns"] == expected_result.get("columns", []) and
         user_result["data"] == expected_result.get("data", [])
     )
-    return ValidationResult(
-        is_correct=is_correct,
-        message="Казахстан угрожает нам бомбардировкой" if is_correct else "Полученные данные не совпадают с ожидаемыми"
-    )
+    try:
+        result = await repo.check_and_reward_task(
+            user_id=current_user.user_id,
+            mission_id=mission_id,
+            task_id=task_id,
+            is_correct=is_correct
+        )
+        
+        return {
+            **result,
+            "is_correct": is_correct
+        }
+
+    except IndexError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid mission_id. Must be 0-2"
+        )
 
 # @router.get("/",
 #             summary="Все задания, сгруппированные по миссиям",
