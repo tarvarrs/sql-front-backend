@@ -12,7 +12,15 @@ class User(Base):
 
     password_rel = relationship("PasswordHash", back_populates="user_rel", uselist=False, cascade="all, delete-orphan")
     progress = relationship("UserProgress", back_populates="user", uselist=False)
-    achievements = relationship("UserAchievement", back_populates="user")
+    achievements = relationship(
+        "UsersAchievements",
+        back_populates="user",
+        cascade="all, delete-orphan")
+    achievement_progress = relationship(
+        "UserAchievementProgress",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
     solved_tasks = relationship("TaskSolved", back_populates="user")
 
 
