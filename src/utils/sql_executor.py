@@ -47,11 +47,11 @@ class SQLExecutor:
                     "row_count": result.rowcount
                 }
         except QueryCanceledError:
-            raise HTTPException(status_code=400, detail="Query timeout exceeded")
+            raise HTTPException(status_code=400, detail="Время выполнения запроса превышено")
         except StatementError as e:
             raise HTTPException(
                 status_code=400,
-                detail=f"SQL execution error: {str(e.orig)}"
+                detail=f"Ошибка выполнения: {str(e.orig)}"
             )
     def _validate_sql(self, sql_query: str):
         """Базовая проверка SQL-запроса на безопасность"""

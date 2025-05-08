@@ -12,13 +12,5 @@ async def get_top_users(
     user_repo: UserRepository=Depends(get_user_repository)
 ):
     top_users = await user_repo.get_top_users(limit)
-    print(f'DEBUG\n{top_users}\n')
-    ranked_users = [
-        UserRating(
-            login=login,
-            total_score=total_score,
-            place=idx+1
-        )
-        for idx, (login, total_score) in enumerate(top_users)
-    ]
-    return {"top_users": ranked_users}
+
+    return {"top_users": top_users}

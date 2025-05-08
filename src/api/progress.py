@@ -12,5 +12,5 @@ async def get_progress(
 ):
     progress = await repo.get_user_progress(user_id)
     if not progress:
-        raise HTTPException(status_code=404, detail="Progress not found")
+        raise HTTPException(status_code=404, detail="Информация о прогрессе не найдена")
     return progress
