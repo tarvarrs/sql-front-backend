@@ -80,6 +80,8 @@ class TaskWithStatusResponse(BaseModel):
     title: str
     description: str
     is_solved: bool
+    has_clue1: bool
+    has_clue2: bool
 
 class AchievementAward(BaseModel):
     achievement_id: int
@@ -94,3 +96,4 @@ class TaskSubmissionResult(BaseModel):
     message: str
     is_correct: bool
     awarded_achievements: list[AchievementAward]
+    current_points: int
