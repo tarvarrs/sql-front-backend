@@ -5,7 +5,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import StatementError
 from asyncpg.exceptions import QueryCanceledError
 from fastapi import HTTPException
+import sqlglot.expressions
 from config import settings
+import sqlglot
 
 
 class SQLExecutor:
@@ -56,15 +58,16 @@ class SQLExecutor:
     def _validate_sql(self, sql_query: str):
         """Базовая проверка SQL-запроса на безопасность"""
         sql_lower = sql_query.lower()
-        
-        forbidden_keywords = ['insert', 'delete', 'update', 'grant',
-                              'revoke', 'create', 'alter', 'drop', 
-                              'truncate', '/*', '*/', 'union']
+        forbidden_keywords = [
+                                'insert', 'delete', 'update', 'grant',
+                                'revoke', 'create', 'alter', 'drop', 
+                                'truncate', '/*', '*/', 'pg_', 'user'
+                            ]
         for keyword in forbidden_keywords:
             if keyword in sql_lower:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Запрещенная операция в SQL-запросе {keyword}"
+                    detail=f"Запрещенная операция в SQL-запросе"
                 )
 
 # более сложная проверка
