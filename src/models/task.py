@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Identity, ARRAY
+from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, Identity, ARRAY, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from database import Base
@@ -23,6 +23,7 @@ class TaskSolved(Base):
 
     user_id = Column(Integer, ForeignKey("users.user_id"), primary_key=True)
     task_global_id = Column(Integer, ForeignKey("tasks.task_global_id"), primary_key=True)
+    solved_at = Column(DateTime, default=func.now())
 
     user = relationship("User", back_populates="solved_tasks")
     task = relationship("Task", back_populates="solved_by")

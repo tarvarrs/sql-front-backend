@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy import select, func, outerjoin, exists, update, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,7 +45,7 @@ class TaskRepository:
 
     async def add_solved_task(self, user_id: int, task_id: int) -> TaskSolved:
         """Добавляет запись о решенной задаче"""
-        solved_task = TaskSolved(user_id=user_id, task_global_id=task_id)
+        solved_task = TaskSolved(user_id=user_id, task_global_id=task_id, solved_at=datetime.now())
         self.session.add(solved_task)
         await self.session.commit()
         return solved_task
@@ -319,3 +320,15 @@ class TaskRepository:
                 (PurchasedClue.task_global_id == task_global_id)
             )
         )
+    async def get_task_stats(self) -> list[dict]:
+        """Возвращает статистику по решенным задачам."""
+        query = (
+            select(
+                TaskSolved.task_global_id,
+                func.count().label("total_solved")
+            )
+            .group_by(TaskSolved.task_global_id)
+            .order_by(func.count().desc())
+        )
+        result = await self.session.execute(query)
+        return [dict(row) for row in result.mappings()]
