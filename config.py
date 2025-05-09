@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     TASK_POINTS: list = [100, 300, 500]
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD")
 
     class Config:
         env_file = ".env"
