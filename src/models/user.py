@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Identity
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship
 from database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -10,7 +11,10 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     total_score = Column(Integer, default=0)
 
-    password_rel = relationship("PasswordHash", back_populates="user_rel", uselist=False, cascade="all, delete-orphan")
+    password_rel = relationship("PasswordHash",
+                                back_populates="user_rel",
+                                uselist=False,
+                                cascade="all, delete-orphan")
     progress = relationship("UserProgress", back_populates="user", uselist=False)
     achievements = relationship(
         "UsersAchievements",
@@ -27,7 +31,14 @@ class User(Base):
 class PasswordHash(Base):
     __tablename__ = "password_hashes"
 
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True, unique=True)
+    user_id = Column(Integer,
+                    ForeignKey(
+                                "users.user_id",
+                                ondelete="CASCADE"
+                                ),
+                    primary_key=True,
+                    unique=True
+                    )
     password_hash = Column(String, nullable=False)
 
     user_rel = relationship("User", back_populates="password_rel")

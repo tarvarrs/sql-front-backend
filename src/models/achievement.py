@@ -1,6 +1,13 @@
-from sqlalchemy import Column, Integer, PrimaryKeyConstraint, String, ForeignKey
+from sqlalchemy import (
+    Column,
+    Integer,
+    PrimaryKeyConstraint,
+    String,
+    ForeignKey
+)
 from sqlalchemy.orm import relationship
 from database import Base
+
 
 class Achievement(Base):
     __tablename__ = "achievements"
@@ -25,14 +32,23 @@ class Achievement(Base):
         cascade="all, delete-orphan"
     )
 
+
 class UsersAchievements(Base):
     __tablename__ = "users_achievements"
 
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete='CASCADE'), primary_key=True)
-    achievement_id = Column(Integer, ForeignKey("achievements.achievement_id", ondelete='CASCADE'), primary_key=True)
+    user_id = Column(Integer,
+                    ForeignKey("users.user_id",ondelete='CASCADE'),
+                    primary_key=True)
+    achievement_id = Column(Integer,
+                            ForeignKey(
+                                "achievements.achievement_id",
+                                ondelete='CASCADE'
+                                ),
+                            primary_key=True)
 
     user = relationship("User", back_populates="achievements")
     achievement = relationship("Achievement", back_populates="users")
+
 
 class UserAchievementProgress(Base):
     __tablename__ = "user_achievement_progress"
@@ -40,12 +56,12 @@ class UserAchievementProgress(Base):
         PrimaryKeyConstraint('user_id', 'achievement_id')
     )
     user_id = Column(
-        Integer, 
+        Integer,
         ForeignKey('users.user_id', ondelete='CASCADE'),
         primary_key=True
     )
     achievement_id = Column(
-        Integer, 
+        Integer,
         ForeignKey('achievements.achievement_id', ondelete='CASCADE'),
         primary_key=True
     )

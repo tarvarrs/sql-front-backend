@@ -1,9 +1,13 @@
 from collections import defaultdict
 from typing import Dict, List
-from sqlalchemy import select, outerjoin, exists, and_, delete
+from sqlalchemy import select, exists, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
-from src.models.achievement import Achievement, UserAchievementProgress, UsersAchievements
+from src.models.achievement import (Achievement,
+                                    UserAchievementProgress,
+                                    UsersAchievements
+                                    )
+
 
 class AchievementRepository:
     def __init__(self, session: AsyncSession):
@@ -23,15 +27,13 @@ class AchievementRepository:
             .select_from(Achievement)
             .join(
                 UsersAchievements,
-                (Achievement.achievement_id == UsersAchievements.achievement_id) & 
+                (Achievement.achievement_id == UsersAchievements.achievement_id) &
                 (UsersAchievements.user_id == user_id),
                 isouter=True
             )
             .order_by(Achievement.category_name, Achievement.achievement_id)
         )
-        
         result = await self.session.execute(stmt)
-        
         grouped = defaultdict(list)
         for row in result:
             grouped[row.category_name].append({
@@ -42,8 +44,8 @@ class AchievementRepository:
                 "historical_info": row.historical_info,
                 "is_earned": bool(row.is_earned)
             })
-        
         return dict(grouped)
+
     async def check_and_award_achievements(
             self,
             user_id: int,
@@ -91,8 +93,8 @@ class AchievementRepository:
                 ))
                 await self.session.execute(
                     delete(UserAchievementProgress).where(
-                        (UserAchievementProgress.user_id==user_id) &
-                        (UserAchievementProgress.achievement_id==ach.achievement_id)
+                        (UserAchievementProgress.user_id == user_id) &
+                        (UserAchievementProgress.achievement_id == ach.achievement_id)
                     )
                 )
                 awarded_achievements.append({

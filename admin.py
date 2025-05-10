@@ -1,22 +1,14 @@
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi import Depends
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
-from starlette.middleware.sessions import SessionMiddleware
 from sqladmin import Admin, BaseView, ModelView, expose
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
-from src.api.task import run_sql_query
-from src.schemas.task import SQLRequest
-from src.models import Task, TaskSolved, Achievement
+from src.models import Task, Achievement
 from src.repositories.task import TaskRepository
-# from src.models.user import User
-from database import engine, get_db, AsyncSessionLocal
-from src.api.dependencies import get_task_repository
+from database import engine, AsyncSessionLocal
 import uvicorn
 from config import settings
 import httpx
@@ -31,9 +23,8 @@ app.add_middleware(
     max_age=3600
 )
 
-# for production
 # app.add_middleware(HTTPSRedirectMiddleware)
-# app.add_middleware(TrustedHostMiddleware, allowed_hosts=["example.com"])
+# app.add_middleware(TrustedHostMiddleware, allowed_hosts=[settings.BACKEND_URL, settings.FRONTEND_URL])
 templates = Jinja2Templates(directory="templates")
 class TaskStatsView(BaseView):
     name = "Статистика по задачам"
@@ -66,7 +57,7 @@ class TaskAdmin(ModelView, model=Task):
             async with httpx.AsyncClient() as client:
                 try:
                     response = await client.post(
-                        f"http://192.168.1.206:8000/api/missions/0/tasks/1/run",
+                        f"{settings.BACKEND_URL}/api/missions/0/tasks/1/run",
                         json={"sql_query": data["correct_query"]}
                     )
                     response.raise_for_status()
@@ -77,15 +68,14 @@ class TaskAdmin(ModelView, model=Task):
                                             }
                 except Exception as e:
                     model.expected_result = f"Ошибка: {str(e)}"
-        
-        # await super().on_model_change(data, model, is_created)
         return await super().on_model_change(data, model, is_created, request)
+
 
 class AchievementAdmin(ModelView, model=Achievement):
     column_list = [Achievement.achievement_id, Achievement.category_name, Achievement.icon, Achievement.name, Achievement.description, Achievement.historical_info, Achievement.tag, Achievement.required_count]
     column_searchable_list = [Achievement.achievement_id, Achievement.category_name, Achievement.name,]
     column_default_sort = (Achievement.achievement_id, False)
-    # form_excluded_columns = [Achievement.users]
+
 
 class AdminAuth(AuthenticationBackend):
     async def login(self, request: Request) -> bool:

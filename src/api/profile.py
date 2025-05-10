@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, List
-
 from database import get_db
 from src.models.user import User
 from src.models.progress import UserProgress
-from src.models.achievement import Achievement, UsersAchievements, UserAchievementProgress
+from src.models.achievement import Achievement, UsersAchievements
 from src.utils.auth import get_current_user
 from src.schemas.user import UserPublic
 
@@ -23,16 +22,18 @@ async def get_my_progress(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(UserProgress).where(UserProgress.user_id == current_user.user_id))
+    result = await db.execute(
+        select(UserProgress)
+        .where(UserProgress.user_id == current_user.user_id))
     progress = result.scalars().first()
-    
+
     if not progress:
         return {
             "easy_solved": 0,
             "medium_solved": 0,
             "hard_solved": 0
         }
-    
+
     return {
         "easy_solved": progress.easy_tasks_solved,
         "medium_solved": progress.medium_tasks_solved,
@@ -56,9 +57,7 @@ async def get_my_achievements(
         .where(UsersAchievements.user_id == current_user.user_id)
     )
     achievements = result.all()
-    
     grouped_achievements: Dict[str, List] = {}
-    
     for ach in achievements:
         category = ach.category_name
         achievement_data = {
@@ -67,10 +66,10 @@ async def get_my_achievements(
             "description": ach.description,
             "historical_info": ach.historical_info
         }
-        
+
         if category not in grouped_achievements:
             grouped_achievements[category] = []
-        
+
         grouped_achievements[category].append(achievement_data)
-    
+
     return grouped_achievements

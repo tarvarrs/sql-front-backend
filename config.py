@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     TASK_POINTS: list = [100, 300, 500]
     ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL")
+    BACKEND_URL: str = os.getenv("BACKEND_URL")
 
     class Config:
         env_file = ".env"

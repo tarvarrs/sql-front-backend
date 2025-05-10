@@ -5,6 +5,7 @@ from src.models.progress import UserProgress
 from src.models.achievement import Achievement, UsersAchievements
 from src.models.user import User, PasswordHash
 
+
 class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -34,18 +35,18 @@ class UserRepository:
         self.session.add(user_progress)
         await self.session.commit()
         return user
+
     async def verify_password(self, login: str, password: str) -> bool:
         user = await self.get_user_by_login(login)
         if not user:
             return False
-        
         result = await self.session.execute(
             select(PasswordHash.password_hash).where(PasswordHash.user_id == user.user_id)
         )
         db_password_hash = result.scalars().first()
 
         return bcrypt.checkpw(password.encode('utf-8'), db_password_hash.encode('utf-8'))
-    
+
     async def get_top_users(self, limit: int=10) -> list[dict]:
         achievements_subq = (
             select(
@@ -87,6 +88,10 @@ class UserRepository:
                 "achievement_icons": row.tech_icons if row.tech_icons else []
             })
         return users
+
     async def get_user_progress_by_id(self, user_id: int) -> User | None:
-        result = await self.session.execute(select(User).where(User.user_id == user_id))
+        result = await self.session.execute(
+            select(User)
+            .where(User.user_id == user_id)
+            )
         return result.scalars().first()

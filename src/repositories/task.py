@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import HTTPException
-from sqlalchemy import select, func, outerjoin, exists, update, and_, delete
+from sqlalchemy import select, func, exists, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories.user import UserRepository
 from src.models.progress import UserProgress
@@ -26,7 +26,6 @@ class TaskRepository:
         counts = {0: 0, 1: 0, 2: 0}  # mission_id: 0-easy, 1-medium, 2-hard
         for mission_id, count in result.all():
             counts[mission_id] = count
-        
         return {
             "easy_tasks_total": counts[0],
             "medium_tasks_total": counts[1],
@@ -60,7 +59,6 @@ class TaskRepository:
                 Task.title
             ).order_by(Task.mission_id, Task.task_id)
         )
-
         grouped = defaultdict(list)
         for task in result.all():
             grouped[task.mission_id].append({
@@ -68,7 +66,6 @@ class TaskRepository:
                 "task_global_id": task.task_global_id,
                 "title": task.title
             })
-        
         return dict(grouped)
     
     async def get_all_tasks_grouped_with_status(self, user_id: int) -> Dict[int, List[dict]]:
@@ -113,7 +110,6 @@ class TaskRepository:
             .where(TaskSolved.user_id == user_id)
             .order_by(Task.mission_id, Task.task_id)
         )
-        
         grouped = defaultdict(list)
         for task in result.all():
             grouped[task.mission_id].append({
@@ -121,7 +117,6 @@ class TaskRepository:
                 "task_global_id": task.task_global_id,
                 "title": task.title
             })
-        
         return dict(grouped)
 
     async def get_tasks_grouped_by_mission(self, user_id: int) -> Dict[int, List[dict]]:
@@ -142,9 +137,7 @@ class TaskRepository:
             )
             .order_by(Task.mission_id, Task.task_id)
         )
-        
         result = await self.session.execute(stmt)
-        
         grouped = defaultdict(list)
         for row in result:
             grouped[row.mission_id].append({
@@ -153,7 +146,6 @@ class TaskRepository:
                 "title": row.title,
                 "is_solved": bool(row.is_solved)
             })
-        
         return dict(grouped)
 
     async def get_task_info_with_status(
@@ -171,10 +163,8 @@ class TaskRepository:
             )
         )
         task = task_result.scalars().first()
-        
         if not task:
             return None, False
-        
         solved_result = await self.session.execute(
             select(exists()
             .where(
@@ -245,7 +235,8 @@ class TaskRepository:
                 message = f"Правильно! За повторное решение баллы не начисляются"
         else:
             if not already_solved:
-                points_penalty = int(settings.TASK_POINTS[mission_id] * 0.1) if mission_id < len(settings.TASK_POINTS) else 0
+                points_penalty = int(
+                    settings.TASK_POINTS[mission_id] * 0.1) if mission_id < len(settings.TASK_POINTS) else 0
                 await self.session.execute(
                     update(User)
                     .where(User.user_id == user_id)
@@ -253,7 +244,7 @@ class TaskRepository:
                 )
                 message = f"Ответ неверный! Списано {points_penalty} баллов"
             else:
-                message = f"Ответ неверный! За повторное решение баллы не списываются"
+                message = "Ответ неверный! За повторное решение баллы не списываются"
         await self.session.commit()
 
         task_tags_result = await self.session.execute(
@@ -263,7 +254,7 @@ class TaskRepository:
             )
         )
         task_tags = task_tags_result.scalar() or []
-        
+
         if is_correct and task_tags:
             achievement_repo = AchievementRepository(self.session)
             awarded_achievements = await achievement_repo.check_and_award_achievements(
@@ -272,7 +263,6 @@ class TaskRepository:
             )
         else:
             awarded_achievements = []
-        
         await self.session.commit()
 
         user_repo = UserRepository(self.session)
@@ -286,6 +276,7 @@ class TaskRepository:
             "awarded_achievements": awarded_achievements,
             "current_points": user_progress.total_score
         }
+
     async def purchase_clue(
             self,
             user_id: int,
@@ -320,6 +311,7 @@ class TaskRepository:
                 (PurchasedClue.task_global_id == task_global_id)
             )
         )
+
     async def get_task_stats(self) -> list[dict]:
         """Возвращает статистику по решенным задачам."""
         query = (
