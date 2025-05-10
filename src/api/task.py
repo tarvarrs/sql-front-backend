@@ -240,7 +240,7 @@ async def submit_sql_query(
     expected_result = task.expected_result
 
     if not expected_result:
-        raise HTTPException(status_code=500, detail="Для этой задачи еще не добавлен ответ")
+        raise HTTPException(status_code=404, detail="Для этой задачи еще не добавлен ответ")
 
     is_correct = (
         user_result["columns"] == expected_result.get("columns", []) and
