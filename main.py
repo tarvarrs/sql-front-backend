@@ -12,9 +12,11 @@ from config import settings
 
 app = FastAPI()
 
+origins = [settings.FRONTEND_URL, "https://sql-front-frontend-production.up.railway.app/"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=origins,
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True
