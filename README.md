@@ -6,7 +6,7 @@ API веб-приложения для решения задач по SQL на �
 
 ### Демо-версия
 
-[Ссылка](https://python-project-83-ks98.onrender.com](https://sql-front-frontend-production.up.railway.app/))
+[Ссылка](https://sql-front-frontend-production.up.railway.app/)
 
 ### Используемый стек
 
