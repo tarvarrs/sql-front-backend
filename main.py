@@ -16,10 +16,10 @@ origins = [settings.FRONTEND_URL, "https://sql-front-frontend-production.up.rail
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True
+    # allow_credentials=True
 )
 
 app.include_router(auth_router)
