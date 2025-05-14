@@ -12,14 +12,14 @@ from config import settings
 
 app = FastAPI()
 
-origins = [settings.FRONTEND_URL, "https://sql-front-frontend-production.up.railway.app/"]
+origins = [settings.FRONTEND_URL]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origins],
     allow_methods=["*"],
     allow_headers=["*"],
-    # allow_credentials=True
+    allow_credentials=True
 )
 
 app.include_router(auth_router)
