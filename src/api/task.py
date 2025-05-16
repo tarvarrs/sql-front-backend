@@ -79,22 +79,6 @@ async def get_task_info(
             }
 
 
-@router.get("/{mission_id}/tasks/{task_id}/clue",
-            summary="Текстовая подсказка",
-            response_model=TaskClue
-            )
-async def get_task_clue(
-    mission_id: int,
-    task_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    repo = TaskRepository(db)
-    task = await repo.get_task_info(mission_id, task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Задача не найдена")
-    return {"clue": task.clue}
-
-
 @router.post("/{mission_id}/tasks/{task_id}/clue",
             summary="Купить текстовую подсказку",
             tags=["Подсказки"],
@@ -134,21 +118,6 @@ async def purchase_clue(
         "total_score": current_user.total_score,
         "clue": task.clue
     }
-
-
-@router.get("/{mission_id}/tasks/{task_id}/expected_result",
-            summary="Ожидаемый результат", 
-            response_model=TaskExpectedResult)
-async def get_expected_result(
-    mission_id: int,
-    task_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    repo = TaskRepository(db)
-    task = await repo.get_task_info(mission_id, task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Задача не найдена")
-    return {"expected_result": task.expected_result}
 
 
 @router.post("/{mission_id}/tasks/{task_id}/expected_result",
