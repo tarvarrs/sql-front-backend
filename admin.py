@@ -46,7 +46,7 @@ class TaskStatsView(BaseView):
 
 class TaskAdmin(ModelView, model=Task):
     column_list = [Task.task_id, Task.mission_id, Task.title, Task.description, Task.clue, Task.expected_result, Task.tags]
-    form_columns = [Task.mission_id, Task.task_id, Task.title, Task.description, Task.clue, Task.correct_query, Task.tags] # Task.expected_result,
+    form_columns = [Task.mission_id, Task.task_id, Task.title, Task.description, Task.clue, Task.correct_query, Task.expected_result, Task.tags]
     column_searchable_list = [Task.task_id, Task.mission_id, Task.title]
     column_default_sort = (Task.task_global_id, False)
     can_create = True
