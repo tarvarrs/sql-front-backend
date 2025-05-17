@@ -1,4 +1,5 @@
 from datetime import datetime, date
+from decimal import Decimal
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 from sqlalchemy.exc import StatementError
@@ -29,6 +30,8 @@ class SQLExecutor:
                         for value in row:
                             if isinstance(value, (date, datetime)):
                                 processed_row.append(value.isoformat())
+                            elif isinstance(value, Decimal):
+                                processed_row.append(float(value))
                             else:
                                 processed_row.append(value)
                         data.append(processed_row)
