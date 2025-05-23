@@ -29,18 +29,24 @@ app.include_router(task_router)
 app.include_router(rating_router)
 
 
-# async def run_server(app, port):
-#     config = uvicorn.Config(app, host="0.0.0.0", port=port)
-#     server = uvicorn.Server(config)
-#     await server.serve()
+async def run_server(app, port):
+    config = uvicorn.Config(
+        app,
+        host="0.0.0.0",
+        port=port,
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+        )
+    server = uvicorn.Server(config)
+    await server.serve()
 
 
-# async def main():
-#     await asyncio.gather(
-#         run_server("admin:app", 8001),
-#         run_server("main:app", 8000)
-#     )
+async def main():
+    await asyncio.gather(
+        run_server("admin:app", 8001),
+        run_server("main:app", 8000)
+    )
 
 
-# if __name__ == '__main__':
-#     asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
