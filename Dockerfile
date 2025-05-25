@@ -2,13 +2,15 @@
 FROM --platform=linux/amd64 python:3.11-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache \
+RUN apk update && \
+    apk add --no-cache \
     gcc \
     musl-dev \
     python3-dev \
     libffi-dev \
     openssl-dev \
-    postgresql-dev
+    postgresql-dev \
+    linux-headers
 
 WORKDIR /app
 
@@ -24,7 +26,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 FROM --platform=linux/amd64 python:3.11-alpine
 
 # Install runtime dependencies
-RUN apk add --no-cache \
+RUN apk update && \
+    apk add --no-cache \
     libpq \
     tzdata
 
