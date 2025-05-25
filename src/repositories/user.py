@@ -19,6 +19,8 @@ class UserRepository:
         user = User(
             login=user_data["login"],
             email=user_data["email"],
+            fullname=user_data["fullname"],
+            group=user_data["group"],
             total_score=0
         )
         self.session.add(user)
@@ -69,6 +71,8 @@ class UserRepository:
             select(
                 User.user_id,
                 User.login,
+                User.fullname,
+                User.group,
                 User.total_score,
                 user_achievements.c.tech_icons
             )
@@ -83,6 +87,8 @@ class UserRepository:
         for idx, row in enumerate(result.all(), 1):
             users.append({
                 "login": row.login,
+                "fullname": row.fullname,
+                "group": row.group,
                 "total_score": row.total_score,
                 "place": idx,
                 "achievement_icons": row.tech_icons if row.tech_icons else []

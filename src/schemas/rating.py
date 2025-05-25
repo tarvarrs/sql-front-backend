@@ -4,6 +4,8 @@ from typing import List
 
 class UserRating(BaseModel):
     login: str
+    fullname: str | None
+    group: str | None
     total_score: int
     place: int
     achievement_icons: List[str] = []

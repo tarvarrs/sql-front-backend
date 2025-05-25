@@ -5,6 +5,8 @@ from typing import Annotated
 class UserBase(BaseModel):
     login: str
     email: EmailStr
+    fullname: str
+    group: str
 
 
 class UserCreate(UserBase):

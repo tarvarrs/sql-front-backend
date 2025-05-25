@@ -21,7 +21,12 @@ async def register(
     
     try:
         user = await user_repo.create_user(
-            user_data={"login": user_data.login, "email": user_data.email},
+            user_data={
+                "login": user_data.login,
+                "email": user_data.email,
+                "fullname": user_data.fullname,
+                "group": user_data.group
+            },
             password=user_data.password,
         )
         return user

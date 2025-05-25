@@ -9,6 +9,8 @@ class User(Base):
     user_id = Column(Integer, Identity(start=1, increment=1), primary_key=True, index=True)
     login = Column(String, unique=True, nullable=False, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
+    fullname = Column(String, nullable=True)
+    group = Column(String, nullable=True)
     total_score = Column(Integer, default=0)
 
     password_rel = relationship("PasswordHash",
