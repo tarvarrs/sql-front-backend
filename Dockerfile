@@ -12,6 +12,8 @@ RUN apk update && \
     postgresql-dev \
     linux-headers
 
+RUN mkdir /app
+
 WORKDIR /app
 
 # Create and activate virtual environment

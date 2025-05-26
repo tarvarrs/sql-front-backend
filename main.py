@@ -12,14 +12,34 @@ from config import settings
 
 app = FastAPI()
 
-origins = [settings.FRONTEND_URL]
+# CORS configuration
+origins = []
+
+# Add configured frontend URL if set
+if settings.FRONTEND_URL:
+    origins.append(settings.FRONTEND_URL)
+    # Allow HTTPS version if HTTP is provided
+    if settings.FRONTEND_URL.startswith("http://"):
+        origins.append(settings.FRONTEND_URL.replace("http://", "https://"))
+
+# Add common Docker development URLs
+origins.extend([
+    "http://localhost",
+    "http://localhost:80",
+    "http://localhost:9000",
+    "http://frontend:9000",
+    "http://nginx",
+    "http://nginx:80",
+    "http://backend:8000"
+])
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True
+    expose_headers=["*"]
 )
 
 app.include_router(auth_router)
