@@ -95,6 +95,56 @@ class UserRepository:
             })
         return users
 
+    async def get_user_place(self, user_id: int) -> dict:
+        achievements_subq = (
+            select(
+                UsersAchievements.user_id,
+                Achievement.icon
+            )
+            .join(Achievement, Achievement.achievement_id == UsersAchievements.achievement_id)
+            .where(Achievement.category_name.like("Техническое мастерство"))
+            .subquery()
+        )
+        user_achievements = (
+            select(
+                achievements_subq.c.user_id,
+                func.array_agg(achievements_subq.c.icon).label("tech_icons")
+            )
+            .group_by(achievements_subq.c.user_id)
+            .subquery()
+        )
+        all_users_query = (
+            select(
+                User.user_id,
+                User.login,
+                User.fullname,
+                User.group,
+                User.total_score,
+                user_achievements.c.tech_icons
+            )
+            .outerjoin(
+                user_achievements,
+                user_achievements.c.user_id == User.user_id
+            )
+            .order_by(User.total_score.desc())
+        )
+        result = await self.session.execute(all_users_query)
+        users = result.all()
+        user_data = None
+        for idx, row in enumerate(users, 1):
+            if row.user_id == user_id:
+                user_data = {
+                    "login": row.login,
+                    "fullname": row.fullname,
+                    "group": row.group,
+                    "total_score": row.total_score,
+                    "place": idx,
+                    "achievement_icons": row.tech_icons if row.tech_icons else []
+                }
+                break
+        return user_data
+
+
     async def get_user_progress_by_id(self, user_id: int) -> User | None:
         result = await self.session.execute(
             select(User)
