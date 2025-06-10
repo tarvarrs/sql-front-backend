@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import HTTPException
-from sqlalchemy import select, func, exists, update, delete
+from sqlalchemy import desc, select, func, exists, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories.user import UserRepository
 from src.models.progress import UserProgress
@@ -324,3 +324,50 @@ class TaskRepository:
         )
         result = await self.session.execute(query)
         return [dict(row) for row in result.mappings()]
+
+    async def find_next_task_data(self, mission_id, task_id):
+        """Возвращает id миссии и задачи для следующей задачи"""
+        next_probable_task_id = task_id + 1
+        next_task_exists = await self.session.execute(
+            select(Task).where(
+                (Task.mission_id == mission_id) & 
+                (Task.task_id == next_probable_task_id)
+            )
+        )
+        if next_task_exists.scalars().first():
+            return (mission_id, next_probable_task_id)
+        next_probable_task_id = 1
+        next_probable_mission_id = mission_id + 1
+        next_mission_exists = await self.session.execute(
+            select(Task).where(
+                (Task.mission_id == next_probable_mission_id) & 
+                (Task.task_id == next_probable_task_id)
+            )
+        )
+        if next_mission_exists.scalars().first():
+            return (next_probable_mission_id, next_probable_task_id)
+        return (None, None)
+
+    async def find_prev_task_data(self, mission_id, task_id):
+        """Возвращает id миссии и задачи для предыдущей задачи"""
+        prev_probable_task_id = task_id - 1
+        prev_task_exists = await self.session.execute(
+            select(Task).where(
+                (Task.mission_id == mission_id) & 
+                (Task.task_id == prev_probable_task_id)
+            )
+        )
+        if prev_task_exists.scalars().first():
+            return (mission_id, prev_probable_task_id)
+        if mission_id == 0:
+            return (None, None)
+        prev_probable_mission_id = mission_id - 1
+        prev_mission_exists = await self.session.execute(
+            select(Task.task_id).where(
+                Task.mission_id == prev_probable_mission_id
+            ).order_by(Task.task_id.desc())
+        )
+        prev_task_id = prev_mission_exists.scalars().first()
+        if prev_task_id:
+            return (prev_probable_mission_id, prev_task_id)
+        return (None, None)

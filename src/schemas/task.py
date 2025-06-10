@@ -97,6 +97,8 @@ class TaskWithStatusResponse(BaseModel):
     is_solved: bool
     has_clue1: bool
     has_clue2: bool
+    previous: dict
+    next: dict
 
 
 class AchievementAward(BaseModel):

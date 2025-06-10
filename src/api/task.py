@@ -69,13 +69,18 @@ async def get_task_info(
     has_clue1 = purchased_clue1.scalar_one_or_none()
     has_clue2 = purchased_clue2.scalar_one_or_none()
 
+    prev_mission_id, prev_task_id = await repo.find_prev_task_data(mission_id, task_id)
+    next_mission_id, next_task_id = await repo.find_next_task_data(mission_id, task_id)
+
     return {"task_id": task.task_id,
             "mission_id": task.mission_id,
             "title": task.title,
             "description": task.description,
             "is_solved": is_solved,
             "has_clue1": bool(has_clue1),
-            "has_clue2": bool(has_clue2)
+            "has_clue2": bool(has_clue2),
+            "previous": {"mission_id": prev_mission_id, "task_id": prev_task_id},
+            "next": {"mission_id": next_mission_id, "task_id": next_task_id}
             }
 
 

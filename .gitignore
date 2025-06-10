@@ -178,3 +178,4 @@ cython_debug/
 ._*
 
 documentation/
+backups/
