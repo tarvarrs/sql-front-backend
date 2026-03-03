@@ -19,6 +19,7 @@ from src.repositories.task import TaskRepository
 from src.utils.auth import get_current_user
 from src.models.user import User
 from src.utils.sql_executor import SQLExecutor
+from src.utils.analytics import log_user_event
 from config import settings
 
 router = APIRouter(prefix="/api/missions", tags=["Миссии и задачи"])
@@ -71,6 +72,14 @@ async def get_task_info(
 
     prev_mission_id, prev_task_id = await repo.find_prev_task_data(mission_id, task_id)
     next_mission_id, next_task_id = await repo.find_next_task_data(mission_id, task_id)
+
+    await log_user_event(
+        session=db,
+        user_id=current_user.user_id,
+        event_type="task_started",
+        task_id=task_id,
+        payload={"mission_id": mission_id}
+    )
 
     return {"task_id": task.task_id,
             "mission_id": task.mission_id,
@@ -173,24 +182,34 @@ async def run_sql_query(
     mission_id: int,
     task_id: int,
     request: SQLRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     repo = TaskRepository(db)
     task = await repo.get_task_info(mission_id, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
-    
+
     try:
+        await log_user_event(
+        session=db,
+        user_id=current_user.user_id,
+        event_type="task_attempt",
+        task_id=task_id,
+        payload={
+            "mission_id": mission_id
+        }
+    )
         return await sql_executor.execute_sql(request.sql_query)
     except HTTPException as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Ошибка во время выполнения: {str(e.detail)}"
+            detail=f"Runtime error: {str(e.detail)}"
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Внутренняя ошибка сервера: {str(e)}"
+            detail=f"Internal server error: {str(e)}"
         )
 
 
@@ -220,6 +239,16 @@ async def submit_sql_query(
         user_result["columns"] == expected_result.get("columns", []) and
         user_result["data"] == expected_result.get("data", [])
     )
+    if is_correct:
+        await log_user_event(
+        session=db,
+        user_id=current_user.user_id,
+        event_type="task_submitted_correct",
+        task_id=task_id,
+        payload={
+            "mission_id": mission_id
+        }
+        )
     try:
         result = await repo.check_and_reward_task(
             user_id=current_user.user_id,
