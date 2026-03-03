@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DB_URL")
     GAME_DATABASE_URL: str = os.getenv("GAME_DATABASE_URL")
@@ -19,5 +20,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         extra = "ignore"
+
 
 settings = Settings()

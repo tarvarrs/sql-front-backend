@@ -20,19 +20,17 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     else:
         expire = datetime.now() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode,
-                            settings.SECRET_KEY,
-                            algorithm=settings.ALGORITHM
-                            )
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
 
 def decode_token(token: str) -> TokenData:
     try:
-        payload = jwt.decode(token,
-                            settings.SECRET_KEY,
-                            algorithms=[settings.ALGORITHM]
-                            )
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         login: str = payload.get("sub")
         if login is None:
             raise HTTPException(
@@ -48,8 +46,8 @@ def decode_token(token: str) -> TokenData:
 
 
 async def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-        user_repo: UserRepository = Depends(get_user_repository),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    user_repo: UserRepository = Depends(get_user_repository),
 ) -> User:
     token_data = decode_token(credentials.credentials)
     user = await user_repo.get_user_by_login(token_data.login)

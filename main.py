@@ -11,6 +11,7 @@ from src.api.rating import router as rating_router
 from src.api.analytics import router as analytics_router
 from src.api.user_activity import router as activity_router
 from config import settings
+
 # from prometheus_client import make_asgi_app, Counter, Histogram
 import time
 
@@ -35,17 +36,17 @@ app = FastAPI()
 #     start_time = time.time()
 #     method = request.method
 #     endpoint = request.url.path
-    
+
 #     try:
 #         response = await call_next(request)
 #     except Exception:
 #         REQUEST_COUNT.labels(method, endpoint, 500).inc()
 #         raise
-    
+
 #     latency = time.time() - start_time
 #     REQUEST_LATENCY.labels(method, endpoint).observe(latency)
 #     REQUEST_COUNT.labels(method, endpoint, response.status_code).inc()
-    
+
 #     return response
 
 # CORS configuration
@@ -59,17 +60,19 @@ if settings.FRONTEND_URL:
         origins.append(settings.FRONTEND_URL.replace("http://", "https://"))
 
 # Add common Docker development URLs
-origins.extend([
-    "http://localhost",
-    "http://localhost:80",
-    "http://localhost:9000",
-    "http://frontend:9000",
-    "http://nginx",
-    "http://nginx:80",
-    "http://backend:8000",
-    "http://192.168.146.1:9000",
-    "http://localhost:9000"
-])
+origins.extend(
+    [
+        "http://localhost",
+        "http://localhost:80",
+        "http://localhost:9000",
+        "http://frontend:9000",
+        "http://nginx",
+        "http://nginx:80",
+        "http://backend:8000",
+        "http://192.168.146.1:9000",
+        "http://localhost:9000",
+    ]
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,7 +80,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"]
+    expose_headers=["*"],
 )
 
 app.include_router(auth_router)
@@ -91,22 +94,15 @@ app.include_router(activity_router)
 
 async def run_server(app, port):
     config = uvicorn.Config(
-        app,
-        host="0.0.0.0",
-        port=port,
-        proxy_headers=True,
-        forwarded_allow_ips="*"
-        )
+        app, host="0.0.0.0", port=port, proxy_headers=True, forwarded_allow_ips="*"
+    )
     server = uvicorn.Server(config)
     await server.serve()
 
 
 async def main():
-    await asyncio.gather(
-        run_server("admin:app", 8001),
-        run_server("main:app", 8000)
-    )
+    await asyncio.gather(run_server("admin:app", 8001), run_server("main:app", 8000))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

@@ -8,6 +8,7 @@ from src.api.dependencies import get_user_repository
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
+
 @router.post("/register", response_model=UserPublic)
 async def register(
     user_data: UserCreate,
@@ -25,7 +26,7 @@ async def register(
                 "login": user_data.login,
                 "email": user_data.email,
                 "fullname": user_data.fullname,
-                "group": user_data.group
+                "group": user_data.group,
             },
             password=user_data.password,
         )
@@ -33,27 +34,27 @@ async def register(
     except KeyError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Отсутствует обязательное поле: {e.args[0]}"
+            detail=f"Отсутствует обязательное поле: {e.args[0]}",
         )
     except AttributeError:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Переданы некорректные данные пользователя"
+            detail="Переданы некорректные данные пользователя",
         )
     except TypeError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Некорректный тип данных: {str(e)}"
+            detail=f"Некорректный тип данных: {str(e)}",
         )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Ошибка валидации: {str(e)}"
+            detail=f"Ошибка валидации: {str(e)}",
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Внутренняя ошибка сервера"
+            detail="Внутренняя ошибка сервера",
         )
 
 
@@ -63,7 +64,9 @@ async def login(
     user_repo: UserRepository = Depends(get_user_repository),
 ):
     user = await user_repo.get_user_by_login(user_data.login)
-    if not user or not await user_repo.verify_password(user_data.login, user_data.password):
+    if not user or not await user_repo.verify_password(
+        user_data.login, user_data.password
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Некорректный логин или пароль",

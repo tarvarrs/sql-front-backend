@@ -20,8 +20,7 @@ class TaskRepository:
     async def get_tasks_count(self) -> dict:
         """Возвращает количество задач по уровням сложности"""
         result = await self.session.execute(
-            select(Task.mission_id, func.count(Task.task_id))
-            .group_by(Task.mission_id)
+            select(Task.mission_id, func.count(Task.task_id)).group_by(Task.mission_id)
         )
         counts = {0: 0, 1: 0, 2: 0}  # mission_id: 0-easy, 1-medium, 2-hard
         for mission_id, count in result.all():
@@ -29,22 +28,23 @@ class TaskRepository:
         return {
             "easy_tasks_total": counts[0],
             "medium_tasks_total": counts[1],
-            "hard_tasks_total": counts[2]
+            "hard_tasks_total": counts[2],
         }
 
     async def get_task_info(self, mission_id: int, task_id: int) -> Task:
         """Возвращает информацию о задаче"""
         result = await self.session.execute(
             select(Task).where(
-                (Task.mission_id == mission_id) & 
-                (Task.task_id == task_id)
+                (Task.mission_id == mission_id) & (Task.task_id == task_id)
             )
         )
         return result.scalars().first()
 
     async def add_solved_task(self, user_id: int, task_id: int) -> TaskSolved:
         """Добавляет запись о решенной задаче"""
-        solved_task = TaskSolved(user_id=user_id, task_global_id=task_id, solved_at=datetime.now())
+        solved_task = TaskSolved(
+            user_id=user_id, task_global_id=task_id, solved_at=datetime.now()
+        )
         self.session.add(solved_task)
         await self.session.commit()
         return solved_task
@@ -53,70 +53,70 @@ class TaskRepository:
         """Возвращает все задания, сгруппированные по mission_id"""
         result = await self.session.execute(
             select(
-                Task.mission_id,
-                Task.task_id,
-                Task.task_global_id,
-                Task.title
+                Task.mission_id, Task.task_id, Task.task_global_id, Task.title
             ).order_by(Task.mission_id, Task.task_id)
         )
         grouped = defaultdict(list)
         for task in result.all():
-            grouped[task.mission_id].append({
-                "task_id": task.task_id,
-                "task_global_id": task.task_global_id,
-                "title": task.title
-            })
+            grouped[task.mission_id].append(
+                {
+                    "task_id": task.task_id,
+                    "task_global_id": task.task_global_id,
+                    "title": task.title,
+                }
+            )
         return dict(grouped)
-    
-    async def get_all_tasks_grouped_with_status(self, user_id: int) -> Dict[int, List[dict]]:
+
+    async def get_all_tasks_grouped_with_status(
+        self, user_id: int
+    ) -> Dict[int, List[dict]]:
         req = (
             select(
                 Task.mission_id,
                 Task.task_id,
                 Task.task_global_id,
                 Task.title,
-                TaskSolved.task_global_id.isnot(None).label("is_solved")
+                TaskSolved.task_global_id.isnot(None).label("is_solved"),
             )
             .select_from(Task)
             .join(
                 TaskSolved,
-                (Task.task_global_id == TaskSolved.task_global_id) &
-                (TaskSolved.user_id == user_id),
-                isouter=True
+                (Task.task_global_id == TaskSolved.task_global_id)
+                & (TaskSolved.user_id == user_id),
+                isouter=True,
             )
             .order_by(Task.mission_id, Task.task_id)
         )
         result = await self.session.execute(req)
         grouped = defaultdict(list)
         for row in result.all():
-            grouped[row.mission_id].append({
-                "task_id": row.task_id,
-                "task_global_id": row.task_global_id,
-                "title": row.title,
-                "is_solved": bool(row.is_solved)
-            })
+            grouped[row.mission_id].append(
+                {
+                    "task_id": row.task_id,
+                    "task_global_id": row.task_global_id,
+                    "title": row.title,
+                    "is_solved": bool(row.is_solved),
+                }
+            )
         return dict(grouped)
 
     async def get_user_solved_tasks(self, user_id: int) -> Dict[int, List[dict]]:
         """Возвращает решенные пользователем задания, сгруппированные по mission_id"""
         result = await self.session.execute(
-            select(
-                Task.mission_id,
-                Task.task_id,
-                Task.task_global_id,
-                Task.title
-            )
+            select(Task.mission_id, Task.task_id, Task.task_global_id, Task.title)
             .join(TaskSolved, Task.task_global_id == TaskSolved.task_global_id)
             .where(TaskSolved.user_id == user_id)
             .order_by(Task.mission_id, Task.task_id)
         )
         grouped = defaultdict(list)
         for task in result.all():
-            grouped[task.mission_id].append({
-                "task_id": task.task_id,
-                "task_global_id": task.task_global_id,
-                "title": task.title
-            })
+            grouped[task.mission_id].append(
+                {
+                    "task_id": task.task_id,
+                    "task_global_id": task.task_global_id,
+                    "title": task.title,
+                }
+            )
         return dict(grouped)
 
     async def get_tasks_grouped_by_mission(self, user_id: int) -> Dict[int, List[dict]]:
@@ -126,69 +126,61 @@ class TaskRepository:
                 Task.task_id,
                 Task.task_global_id,
                 Task.title,
-                TaskSolved.task_global_id.isnot(None).label("is_solved")
+                TaskSolved.task_global_id.isnot(None).label("is_solved"),
             )
             .select_from(Task)
             .join(
                 TaskSolved,
-                (Task.task_global_id == TaskSolved.task_global_id) & 
-                (TaskSolved.user_id == user_id),
-                isouter=True
+                (Task.task_global_id == TaskSolved.task_global_id)
+                & (TaskSolved.user_id == user_id),
+                isouter=True,
             )
             .order_by(Task.mission_id, Task.task_id)
         )
         result = await self.session.execute(stmt)
         grouped = defaultdict(list)
         for row in result:
-            grouped[row.mission_id].append({
-                "task_id": row.task_id,
-                "task_global_id": row.task_global_id,
-                "title": row.title,
-                "is_solved": bool(row.is_solved)
-            })
+            grouped[row.mission_id].append(
+                {
+                    "task_id": row.task_id,
+                    "task_global_id": row.task_global_id,
+                    "title": row.title,
+                    "is_solved": bool(row.is_solved),
+                }
+            )
         return dict(grouped)
 
     async def get_task_info_with_status(
-        self, 
-        mission_id: int, 
-        task_id: int,
-        user_id: int
-        ) -> tuple[Task, bool]:
+        self, mission_id: int, task_id: int, user_id: int
+    ) -> tuple[Task, bool]:
         """Возвращает задачу и статус решения пользователем"""
         task_result = await self.session.execute(
-            select(Task)
-            .where(
-                (Task.mission_id == mission_id) & 
-                (Task.task_id == task_id)
+            select(Task).where(
+                (Task.mission_id == mission_id) & (Task.task_id == task_id)
             )
         )
         task = task_result.scalars().first()
         if not task:
             return None, False
         solved_result = await self.session.execute(
-            select(exists()
-            .where(
-                (TaskSolved.task_global_id == task.task_global_id) &
-                (TaskSolved.user_id == user_id))
+            select(
+                exists().where(
+                    (TaskSolved.task_global_id == task.task_global_id)
+                    & (TaskSolved.user_id == user_id)
                 )
             )
+        )
         is_solved = solved_result.scalar()
-        
+
         return task, is_solved
 
     async def check_and_reward_task(
-        self,
-        user_id: int,
-        mission_id: int,
-        task_id: int,
-        is_correct: bool
+        self, user_id: int, mission_id: int, task_id: int, is_correct: bool
     ) -> dict:
 
         task = await self.session.execute(
-            select(Task.task_global_id)
-            .where(
-                (Task.mission_id == mission_id) &
-                (Task.task_id == task_id)
+            select(Task.task_global_id).where(
+                (Task.mission_id == mission_id) & (Task.task_id == task_id)
             )
         )
         task_global_id = task.scalar()
@@ -196,10 +188,12 @@ class TaskRepository:
             raise HTTPException(status_code=404, detail="Задача не найдена")
 
         already_solved = await self.session.execute(
-            select(exists().where(
-                (TaskSolved.user_id == user_id) &
-                (TaskSolved.task_global_id == task_global_id)
-            ))
+            select(
+                exists().where(
+                    (TaskSolved.user_id == user_id)
+                    & (TaskSolved.task_global_id == task_global_id)
+                )
+            )
         )
         already_solved = already_solved.scalar()
         points_earned = 0
@@ -208,26 +202,31 @@ class TaskRepository:
 
         if is_correct:
             if not already_solved:
-                points = settings.TASK_POINTS[mission_id] if mission_id < len(settings.TASK_POINTS) else 0
+                points = (
+                    settings.TASK_POINTS[mission_id]
+                    if mission_id < len(settings.TASK_POINTS)
+                    else 0
+                )
                 points_earned = points
                 await self.session.execute(
                     update(User)
                     .where(User.user_id == user_id)
                     .values(total_score=User.total_score + points)
                 )
-                self.session.add(TaskSolved(
-                    user_id=user_id,
-                    task_global_id=task_global_id
-                ))
+                self.session.add(
+                    TaskSolved(user_id=user_id, task_global_id=task_global_id)
+                )
                 progress_field = [
                     "easy_tasks_solved",
-                    "medium_tasks_solved", 
-                    "hard_tasks_solved"
+                    "medium_tasks_solved",
+                    "hard_tasks_solved",
                 ][mission_id]
                 await self.session.execute(
                     update(UserProgress)
                     .where(UserProgress.user_id == user_id)
-                    .values(**{progress_field: getattr(UserProgress, progress_field) + 1})
+                    .values(
+                        **{progress_field: getattr(UserProgress, progress_field) + 1}
+                    )
                 )
                 message = f"Правильно! Заработано {points} баллов"
                 await self.clear_purchased_clues(user_id, task_global_id)
@@ -235,8 +234,11 @@ class TaskRepository:
                 message = f"Правильно! За повторное решение баллы не начисляются"
         else:
             if not already_solved:
-                points_penalty = int(
-                    settings.TASK_POINTS[mission_id] * 0.1) if mission_id < len(settings.TASK_POINTS) else 0
+                points_penalty = (
+                    int(settings.TASK_POINTS[mission_id] * 0.1)
+                    if mission_id < len(settings.TASK_POINTS)
+                    else 0
+                )
                 await self.session.execute(
                     update(User)
                     .where(User.user_id == user_id)
@@ -249,8 +251,7 @@ class TaskRepository:
 
         task_tags_result = await self.session.execute(
             select(Task.tags).where(
-                (Task.mission_id == mission_id) &
-                (Task.task_id == task_id)
+                (Task.mission_id == mission_id) & (Task.task_id == task_id)
             )
         )
         task_tags = task_tags_result.scalar() or []
@@ -258,8 +259,7 @@ class TaskRepository:
         if is_correct and task_tags:
             achievement_repo = AchievementRepository(self.session)
             awarded_achievements = await achievement_repo.check_and_award_achievements(
-                user_id=user_id,
-                task_tags=task_tags
+                user_id=user_id, task_tags=task_tags
             )
         else:
             awarded_achievements = []
@@ -274,51 +274,39 @@ class TaskRepository:
             "points_penalty": points_penalty,
             "message": message,
             "awarded_achievements": awarded_achievements,
-            "current_points": user_progress.total_score
+            "current_points": user_progress.total_score,
         }
 
     async def purchase_clue(
-            self,
-            user_id: int,
-            task_global_id: int,
-            clue_type: int,
-            cost: int
+        self, user_id: int, task_global_id: int, clue_type: int, cost: int
     ) -> bool:
         user = await self.session.get(User, user_id)
         if user.total_score < cost:
             raise HTTPException(
-                status_code=400,
-                detail="Недостаточно баллов для покупки подсказки"
+                status_code=400, detail="Недостаточно баллов для покупки подсказки"
             )
         user.total_score -= cost
 
-        self.session.add(PurchasedClue(
-            user_id=user_id,
-            task_global_id=task_global_id,
-            clue_type=clue_type
-        ))
+        self.session.add(
+            PurchasedClue(
+                user_id=user_id, task_global_id=task_global_id, clue_type=clue_type
+            )
+        )
         await self.session.commit()
         return True
 
-    async def clear_purchased_clues(
-            self,
-            user_id: int,
-            task_global_id: int
-    ):
+    async def clear_purchased_clues(self, user_id: int, task_global_id: int):
         await self.session.execute(
             delete(PurchasedClue).where(
-                (PurchasedClue.user_id == user_id) &
-                (PurchasedClue.task_global_id == task_global_id)
+                (PurchasedClue.user_id == user_id)
+                & (PurchasedClue.task_global_id == task_global_id)
             )
         )
 
     async def get_task_stats(self) -> list[dict]:
         """Возвращает статистику по решенным задачам."""
         query = (
-            select(
-                TaskSolved.task_global_id,
-                func.count().label("total_solved")
-            )
+            select(TaskSolved.task_global_id, func.count().label("total_solved"))
             .group_by(TaskSolved.task_global_id)
             .order_by(func.count().desc())
         )
@@ -330,8 +318,8 @@ class TaskRepository:
         next_probable_task_id = task_id + 1
         next_task_exists = await self.session.execute(
             select(Task).where(
-                (Task.mission_id == mission_id) & 
-                (Task.task_id == next_probable_task_id)
+                (Task.mission_id == mission_id)
+                & (Task.task_id == next_probable_task_id)
             )
         )
         if next_task_exists.scalars().first():
@@ -340,8 +328,8 @@ class TaskRepository:
         next_probable_mission_id = mission_id + 1
         next_mission_exists = await self.session.execute(
             select(Task).where(
-                (Task.mission_id == next_probable_mission_id) & 
-                (Task.task_id == next_probable_task_id)
+                (Task.mission_id == next_probable_mission_id)
+                & (Task.task_id == next_probable_task_id)
             )
         )
         if next_mission_exists.scalars().first():
@@ -353,8 +341,8 @@ class TaskRepository:
         prev_probable_task_id = task_id - 1
         prev_task_exists = await self.session.execute(
             select(Task).where(
-                (Task.mission_id == mission_id) & 
-                (Task.task_id == prev_probable_task_id)
+                (Task.mission_id == mission_id)
+                & (Task.task_id == prev_probable_task_id)
             )
         )
         if prev_task_exists.scalars().first():
@@ -363,9 +351,9 @@ class TaskRepository:
             return (None, None)
         prev_probable_mission_id = mission_id - 1
         prev_mission_exists = await self.session.execute(
-            select(Task.task_id).where(
-                Task.mission_id == prev_probable_mission_id
-            ).order_by(Task.task_id.desc())
+            select(Task.task_id)
+            .where(Task.mission_id == prev_probable_mission_id)
+            .order_by(Task.task_id.desc())
         )
         prev_task_id = prev_mission_exists.scalars().first()
         if prev_task_id:

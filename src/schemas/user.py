@@ -10,12 +10,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: Annotated [
-        str,
-        StringConstraints(
-            min_length=8
-        )
-    ]
+    password: Annotated[str, StringConstraints(min_length=8)]
 
 
 class UserInDB(UserBase):

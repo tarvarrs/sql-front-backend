@@ -10,13 +10,13 @@ from database import get_db
 
 router = APIRouter(prefix="/analytics", tags=["Аналитика"])
 
-@router.get("/first-attempt",
-            response_model=List[TaskThinkingTime],
-            summary="Время от первого открытия задачи до первой попытки решения",
-            )
+
+@router.get(
+    "/first-attempt",
+    response_model=List[TaskThinkingTime],
+    summary="Время от первого открытия задачи до первой попытки решения",
+)
 async def get_my_thinking_time(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     return await get_thinking_time_stats(db, current_user.user_id)
-

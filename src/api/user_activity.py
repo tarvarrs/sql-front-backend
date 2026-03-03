@@ -12,15 +12,17 @@ from src.utils.analytics import log_user_event
 
 router = APIRouter(prefix="/util")
 
-@router.post("/{mission_id}/tasks/{task_id}/inactive",
-            summary="Пользователь покинул страницу",
-            )
+
+@router.post(
+    "/{mission_id}/tasks/{task_id}/inactive",
+    summary="Пользователь покинул страницу",
+)
 async def log_user_inactive(
     mission_id: int,
     task_id: int,
     current_user: User = Depends(get_current_user),
     repo: TaskRepository = Depends(get_task_repository),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     task = await repo.get_task_info(mission_id, task_id)
     if not task:
@@ -32,5 +34,5 @@ async def log_user_inactive(
         task_id=task_id,
         payload={
             "mission_id": mission_id,
-        }
+        },
     )

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user import UserRefreshToken
 
+
 class TokenRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -19,23 +20,18 @@ class TokenRepository:
 
         token = secrets.token_urlsafe(64)
         expires_at = datetime.now() + timedelta(days=30)
-        
-        db_token = UserRefreshToken(
-            user_id=user_id,
-            token=token,
-            expires_at=expires_at
-        )
+
+        db_token = UserRefreshToken(user_id=user_id, token=token, expires_at=expires_at)
         self.session.add(db_token)
-        
+
         return token
 
     async def validate_refresh_token(self, token: str) -> Optional[int]:
         result = await self.session.execute(
-            select(UserRefreshToken)
-            .where(
-                (UserRefreshToken.token == token) &
-                (UserRefreshToken.expires_at > datetime.now()) &
-                (not UserRefreshToken.revoked)
+            select(UserRefreshToken).where(
+                (UserRefreshToken.token == token)
+                & (UserRefreshToken.expires_at > datetime.now())
+                & (not UserRefreshToken.revoked)
             )
         )
         db_token = result.scalar_one_or_none()

@@ -3,7 +3,7 @@ from database import Base
 
 
 class PurchasedClue(Base):
-    __tablename__ = 'users_clues'
+    __tablename__ = "users_clues"
 
     user_id = Column(Integer, primary_key=True)
     task_global_id = Column(Integer, primary_key=True)

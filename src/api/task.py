@@ -13,7 +13,7 @@ from src.schemas.task import (
     TasksCount,
     SQLRequest,
     SQLResponse,
-    TaskWithStatusResponse
+    TaskWithStatusResponse,
 )
 from src.repositories.task import TaskRepository
 from src.utils.auth import get_current_user
@@ -26,47 +26,48 @@ router = APIRouter(prefix="/api/missions", tags=["Миссии и задачи"]
 sql_executor = SQLExecutor()
 
 
-@router.get("/get_info", summary="Количество задач по категориям", tags=["Профиль"],response_model=TasksCount)
-async def get_tasks_count(
-    db: AsyncSession = Depends(get_db)
-):
+@router.get(
+    "/get_info",
+    summary="Количество задач по категориям",
+    tags=["Профиль"],
+    response_model=TasksCount,
+)
+async def get_tasks_count(db: AsyncSession = Depends(get_db)):
     repo = TaskRepository(db)
     return await repo.get_tasks_count()
 
 
-@router.get("/{mission_id}/tasks/{task_id}",
-            summary="Основная информация о задаче",
-            response_model=TaskWithStatusResponse)
+@router.get(
+    "/{mission_id}/tasks/{task_id}",
+    summary="Основная информация о задаче",
+    response_model=TaskWithStatusResponse,
+)
 async def get_task_info(
     mission_id: int,
     task_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     repo = TaskRepository(db)
     task, is_solved = await repo.get_task_info_with_status(
-                                                            mission_id,
-                                                            task_id,
-                                                            current_user.user_id
-                                                            )
+        mission_id, task_id, current_user.user_id
+    )
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
     purchased_clue1 = await repo.session.execute(
-        select(PurchasedClue.clue_type)
-        .where(
-            (PurchasedClue.user_id == current_user.user_id) &
-            (PurchasedClue.task_global_id == task.task_global_id) &
-            (PurchasedClue.clue_type == 1)
-            )
+        select(PurchasedClue.clue_type).where(
+            (PurchasedClue.user_id == current_user.user_id)
+            & (PurchasedClue.task_global_id == task.task_global_id)
+            & (PurchasedClue.clue_type == 1)
         )
+    )
     purchased_clue2 = await repo.session.execute(
-        select(PurchasedClue.clue_type)
-        .where(
-            (PurchasedClue.user_id == current_user.user_id) &
-            (PurchasedClue.task_global_id == task.task_global_id) &
-            (PurchasedClue.clue_type == 2)
-            )
+        select(PurchasedClue.clue_type).where(
+            (PurchasedClue.user_id == current_user.user_id)
+            & (PurchasedClue.task_global_id == task.task_global_id)
+            & (PurchasedClue.clue_type == 2)
         )
+    )
     has_clue1 = purchased_clue1.scalar_one_or_none()
     has_clue2 = purchased_clue2.scalar_one_or_none()
 
@@ -78,134 +79,133 @@ async def get_task_info(
         user_id=current_user.user_id,
         event_type="task_started",
         task_id=task_id,
-        payload={"mission_id": mission_id}
+        payload={"mission_id": mission_id},
     )
 
-    return {"task_id": task.task_id,
-            "mission_id": task.mission_id,
-            "title": task.title,
-            "description": task.description,
-            "is_solved": is_solved,
-            "has_clue1": bool(has_clue1),
-            "has_clue2": bool(has_clue2),
-            "previous": {"mission_id": prev_mission_id, "task_id": prev_task_id},
-            "next": {"mission_id": next_mission_id, "task_id": next_task_id}
-            }
+    return {
+        "task_id": task.task_id,
+        "mission_id": task.mission_id,
+        "title": task.title,
+        "description": task.description,
+        "is_solved": is_solved,
+        "has_clue1": bool(has_clue1),
+        "has_clue2": bool(has_clue2),
+        "previous": {"mission_id": prev_mission_id, "task_id": prev_task_id},
+        "next": {"mission_id": next_mission_id, "task_id": next_task_id},
+    }
 
 
-@router.post("/{mission_id}/tasks/{task_id}/clue",
-            summary="Купить текстовую подсказку",
-            tags=["Подсказки"],
-            )
+@router.post(
+    "/{mission_id}/tasks/{task_id}/clue",
+    summary="Купить текстовую подсказку",
+    tags=["Подсказки"],
+)
 async def purchase_clue(
     mission_id: int,
     task_id: int,
     current_user: User = Depends(get_current_user),
     repo: TaskRepository = Depends(get_task_repository),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     task = await repo.get_task_info(mission_id, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Задача на найдена")
     cost = int(settings.TASK_POINTS[mission_id] * 0.1)
     purchased_clue1 = await repo.session.execute(
-        select(PurchasedClue.clue_type)
-        .where(
-            (PurchasedClue.user_id == current_user.user_id) &
-            (PurchasedClue.task_global_id == task.task_global_id) &
-            (PurchasedClue.clue_type == 1)
-            )
+        select(PurchasedClue.clue_type).where(
+            (PurchasedClue.user_id == current_user.user_id)
+            & (PurchasedClue.task_global_id == task.task_global_id)
+            & (PurchasedClue.clue_type == 1)
         )
+    )
     has_clue1 = purchased_clue1.scalar_one_or_none()
     if has_clue1:
-        return {"points_spent": 0,
-                "total_score": current_user.total_score,
-                "clue": task.clue
-                }
+        return {
+            "points_spent": 0,
+            "total_score": current_user.total_score,
+            "clue": task.clue,
+        }
     await repo.purchase_clue(
         user_id=current_user.user_id,
         task_global_id=task.task_global_id,
         clue_type=1,
-        cost=cost
+        cost=cost,
     )
     await log_user_event(
         session=db,
         user_id=current_user.user_id,
         event_type="purchase_clue",
         task_id=task_id,
-        payload={
-            "mission_id": mission_id,
-            "clue_type": 1
-        }
+        payload={"mission_id": mission_id, "clue_type": 1},
     )
     return {
         "points_spent": cost,
         "total_score": current_user.total_score,
-        "clue": task.clue
+        "clue": task.clue,
     }
 
 
-@router.post("/{mission_id}/tasks/{task_id}/expected_result",
-            summary="Купить ожидаемый результат",
-            tags=["Подсказки"],
-            )
+@router.post(
+    "/{mission_id}/tasks/{task_id}/expected_result",
+    summary="Купить ожидаемый результат",
+    tags=["Подсказки"],
+)
 async def purchase_expected_result(
     mission_id: int,
     task_id: int,
     current_user: User = Depends(get_current_user),
     repo: TaskRepository = Depends(get_task_repository),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     task = await repo.get_task_info(mission_id, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Задача на найдена")
     cost = int(settings.TASK_POINTS[mission_id] * 0.2)
     purchased_clue2 = await repo.session.execute(
-        select(PurchasedClue.clue_type)
-        .where(
-            (PurchasedClue.user_id == current_user.user_id) &
-            (PurchasedClue.task_global_id == task.task_global_id) &
-            (PurchasedClue.clue_type == 2)
-            )
+        select(PurchasedClue.clue_type).where(
+            (PurchasedClue.user_id == current_user.user_id)
+            & (PurchasedClue.task_global_id == task.task_global_id)
+            & (PurchasedClue.clue_type == 2)
         )
+    )
     has_clue2 = purchased_clue2.scalar_one_or_none()
     if has_clue2:
-        return {"points_spent": 0,
-                "total_score": current_user.total_score,
-                "expected_result": task.expected_result
-                }
+        return {
+            "points_spent": 0,
+            "total_score": current_user.total_score,
+            "expected_result": task.expected_result,
+        }
     await repo.purchase_clue(
         user_id=current_user.user_id,
         task_global_id=task.task_global_id,
         clue_type=2,
-        cost=cost
+        cost=cost,
     )
     await log_user_event(
         session=db,
         user_id=current_user.user_id,
         event_type="purchase_clue",
         task_id=task_id,
-        payload={
-            "mission_id": mission_id,
-            "clue_type": 2
-        }
+        payload={"mission_id": mission_id, "clue_type": 2},
     )
     return {
         "points_spent": cost,
         "total_score": current_user.total_score,
-        "expected_result": task.expected_result
+        "expected_result": task.expected_result,
     }
 
 
-@router.post("/{mission_id}/tasks/{task_id}/run",
-            summary="Выполнение SQL",
-            response_model=SQLResponse)
+@router.post(
+    "/{mission_id}/tasks/{task_id}/run",
+    summary="Выполнение SQL",
+    response_model=SQLResponse,
+)
 async def run_sql_query(
     mission_id: int,
     task_id: int,
     request: SQLRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     repo = TaskRepository(db)
     task = await repo.get_task_info(mission_id, task_id)
@@ -214,100 +214,88 @@ async def run_sql_query(
 
     try:
         await log_user_event(
-        session=db,
-        user_id=current_user.user_id,
-        event_type="task_attempt",
-        task_id=task_id,
-        payload={
-            "mission_id": mission_id
-        }
-    )
+            session=db,
+            user_id=current_user.user_id,
+            event_type="task_attempt",
+            task_id=task_id,
+            payload={"mission_id": mission_id},
+        )
         return await sql_executor.execute_sql(request.sql_query)
     except HTTPException as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Runtime error: {str(e.detail)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Runtime error: {str(e.detail)}")
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.post("/{mission_id}/tasks/{task_id}/submit",
-            summary="Проверка ответа",
-            response_model=TaskSubmissionResult
-            )
+@router.post(
+    "/{mission_id}/tasks/{task_id}/submit",
+    summary="Проверка ответа",
+    response_model=TaskSubmissionResult,
+)
 async def submit_sql_query(
     mission_id: int,
     task_id: int,
     request: SQLRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     repo = TaskRepository(db)
     task = await repo.get_task_info(mission_id, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
-    
+
     user_result = await sql_executor.execute_sql(request.sql_query)
     expected_result = task.expected_result
 
     if not expected_result:
-        raise HTTPException(status_code=404, detail="Для этой задачи еще не добавлен ответ")
+        raise HTTPException(
+            status_code=404, detail="Для этой задачи еще не добавлен ответ"
+        )
 
-    is_correct = (
-        user_result["columns"] == expected_result.get("columns", []) and
-        user_result["data"] == expected_result.get("data", [])
-    )
+    is_correct = user_result["columns"] == expected_result.get(
+        "columns", []
+    ) and user_result["data"] == expected_result.get("data", [])
     await log_user_event(
         session=db,
         user_id=current_user.user_id,
         event_type="task_submitted",
         task_id=task_id,
-        payload={
-            "mission_id": mission_id,
-            "is_correct": is_correct
-        }
+        payload={"mission_id": mission_id, "is_correct": is_correct},
     )
     try:
         result = await repo.check_and_reward_task(
             user_id=current_user.user_id,
             mission_id=mission_id,
             task_id=task_id,
-            is_correct=is_correct
+            is_correct=is_correct,
         )
-        return {
-            **result,
-            "is_correct": is_correct
-        }
+        return {**result, "is_correct": is_correct}
 
     except IndexError:
         raise HTTPException(
             status_code=400,
-            detail="Некорректный mission_id: должен быть от 0 до 2 включительно"
+            detail="Некорректный mission_id: должен быть от 0 до 2 включительно",
         )
 
 
-@router.get("/tasks",
-            summary="Отображение всех задач со статусом решения",
-            response_model=GroupedTasksResponse)
+@router.get(
+    "/tasks",
+    summary="Отображение всех задач со статусом решения",
+    response_model=GroupedTasksResponse,
+)
 async def get_tasks_grouped(
     current_user: User = Depends(get_current_user),
-    repo: TaskRepository = Depends(get_task_repository)
+    repo: TaskRepository = Depends(get_task_repository),
 ):
     grouped_tasks = await repo.get_all_tasks_grouped_with_status(current_user.user_id)
 
     return {"missions": grouped_tasks}
 
 
-@router.get("/",
-            summary="Задачи со статусом решения",
-            response_model=MissionsResponse)
+@router.get("/", summary="Задачи со статусом решения", response_model=MissionsResponse)
 async def get_tasks_grouped(
     current_user: User = Depends(get_current_user),
-    repo: TaskRepository = Depends(get_task_repository)
+    repo: TaskRepository = Depends(get_task_repository),
 ):
     grouped_tasks = await repo.get_tasks_grouped_by_mission(current_user.user_id)
     return {"missions": grouped_tasks}

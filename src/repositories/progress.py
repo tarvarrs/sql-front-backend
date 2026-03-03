@@ -14,11 +14,7 @@ class ProgressRepository:
         return result.scalars().first()
 
     async def update_progress(
-            self,
-            user_id: int,
-            easy: int = 0,
-            medium: int = 0,
-            hard: int = 0
+        self, user_id: int, easy: int = 0, medium: int = 0, hard: int = 0
     ) -> UserProgress:
         progress = await self.get_user_progress(user_id)
         if not progress:
