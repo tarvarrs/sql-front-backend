@@ -182,3 +182,5 @@ backups/
 *.zip
 grafana/
 prometheus.yml
+Dockerfile*
+docker-compose.yml
