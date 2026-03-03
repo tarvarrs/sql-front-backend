@@ -180,3 +180,5 @@ cython_debug/
 documentation/
 backups/
 *.zip
+grafana/
+prometheus.yml
