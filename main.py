@@ -8,7 +8,8 @@ from src.api.achievement import router as achievement_router
 from src.api.profile import router as profile_router
 from src.api.task import router as task_router
 from src.api.rating import router as rating_router
-from api.analytics import router as analytics_router
+from src.api.analytics import router as analytics_router
+from src.api.user_activity import router as activity_router
 from config import settings
 # from prometheus_client import make_asgi_app, Counter, Histogram
 import time
@@ -85,6 +86,7 @@ app.include_router(profile_router)
 app.include_router(task_router)
 app.include_router(rating_router)
 app.include_router(analytics_router)
+app.include_router(activity_router)
 
 
 async def run_server(app, port):
