@@ -16,6 +16,10 @@ class UserRepository:
     
     async def create_user(self, user_data: dict, password: str) -> dict:
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        required_fields = ["login", "email", "fullname", "group"]
+        for field in required_fields:
+            if field not in user_data or not user_data[field]:
+                raise KeyError(field)
         user = User(
             login=user_data["login"],
             email=user_data["email"],

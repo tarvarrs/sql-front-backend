@@ -18,7 +18,7 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Пользователь с таким логином уже существует",
         )
-    
+
     try:
         user = await user_repo.create_user(
             user_data={
@@ -30,10 +30,30 @@ async def register(
             password=user_data.password,
         )
         return user
+    except KeyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Отсутствует обязательное поле: {e.args[0]}"
+        )
+    except AttributeError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Переданы некорректные данные пользователя"
+        )
+    except TypeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Некорректный тип данных: {str(e)}"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Ошибка валидации: {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Пользователь с таким email уже существует",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Внутренняя ошибка сервера"
         )
 
 
