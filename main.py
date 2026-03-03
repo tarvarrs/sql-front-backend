@@ -8,9 +8,44 @@ from src.api.achievement import router as achievement_router
 from src.api.profile import router as profile_router
 from src.api.task import router as task_router
 from src.api.rating import router as rating_router
+from src.api.anaytics import router as analytics_router
 from config import settings
+# from prometheus_client import make_asgi_app, Counter, Histogram
+import time
 
 app = FastAPI()
+
+# # Добавьте Prometheus middleware
+# metrics_app = make_asgi_app()
+# app.mount("/metrics", metrics_app)
+
+# # Создайте метрики
+# REQUEST_COUNT = Counter(
+#     'request_count', 'App Request Count',
+#     ['method', 'endpoint', 'http_status']
+# )
+# REQUEST_LATENCY = Histogram(
+#     'request_latency_seconds', 'Request latency',
+#     ['method', 'endpoint']
+# )
+
+# @app.middleware("http")
+# async def monitor_requests(request, call_next):
+#     start_time = time.time()
+#     method = request.method
+#     endpoint = request.url.path
+    
+#     try:
+#         response = await call_next(request)
+#     except Exception:
+#         REQUEST_COUNT.labels(method, endpoint, 500).inc()
+#         raise
+    
+#     latency = time.time() - start_time
+#     REQUEST_LATENCY.labels(method, endpoint).observe(latency)
+#     REQUEST_COUNT.labels(method, endpoint, response.status_code).inc()
+    
+#     return response
 
 # CORS configuration
 origins = []
@@ -30,7 +65,9 @@ origins.extend([
     "http://frontend:9000",
     "http://nginx",
     "http://nginx:80",
-    "http://backend:8000"
+    "http://backend:8000",
+    "http://192.168.146.1:9000",
+    "http://localhost:9000"
 ])
 
 app.add_middleware(
@@ -47,6 +84,7 @@ app.include_router(achievement_router)
 app.include_router(profile_router)
 app.include_router(task_router)
 app.include_router(rating_router)
+app.include_router(analytics_router)
 
 
 async def run_server(app, port):
