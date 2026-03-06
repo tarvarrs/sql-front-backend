@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+
+from src.api.dependencies import get_progress_repository
 from src.repositories.progress import ProgressRepository
 from src.schemas.progress import UserProgressInDB
-from src.api.dependencies import get_progress_repository
 
 router = APIRouter(prefix="/api/progress", tags=["progress"])
 

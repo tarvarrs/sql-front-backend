@@ -1,8 +1,10 @@
 from collections import defaultdict
 from typing import Dict, List
-from sqlalchemy import select, exists, delete
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from sqlalchemy import delete, exists, select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.models.achievement import (
     Achievement,
     UserAchievementProgress,

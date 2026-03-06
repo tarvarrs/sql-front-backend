@@ -1,9 +1,11 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import text
-from config import settings
 import asyncio
+
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+from config import settings
 
 Base = declarative_base()
 

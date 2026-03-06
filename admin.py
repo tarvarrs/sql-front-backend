@@ -1,19 +1,20 @@
+import httpx
+import pandas as pd
+import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.templating import Jinja2Templates
-from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.templating import Jinja2Templates
+from plotly.express import bar
 from sqladmin import Admin, BaseView, ModelView, expose
 from sqladmin.authentication import AuthenticationBackend
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
-from src.models import Task, Achievement
-from src.repositories.task import TaskRepository
-from database import engine, AsyncSessionLocal
-import uvicorn
+
 from config import settings
-import httpx
-from plotly.express import bar
-import pandas as pd
+from database import AsyncSessionLocal, engine
+from src.models import Achievement, Task
+from src.repositories.task import TaskRepository
 
 app = FastAPI(title="Admin")
 app.add_middleware(

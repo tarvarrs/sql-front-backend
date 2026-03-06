@@ -1,13 +1,15 @@
+from typing import Dict, List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Dict, List
+
 from database import get_db
-from src.models.user import User
-from src.models.progress import UserProgress
 from src.models.achievement import Achievement, UsersAchievements
-from src.utils.auth import get_current_user
+from src.models.progress import UserProgress
+from src.models.user import User
 from src.schemas.user import UserPublic
+from src.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/profile", tags=["Профиль"])
 

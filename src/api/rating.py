@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from database import get_db
+from src.api.dependencies import get_user_repository
 from src.models.user import User
 from src.repositories.user import UserRepository
 from src.schemas.rating import RatingResponse
-from src.api.dependencies import get_user_repository
 from src.utils.auth import get_current_user
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/rating", tags=["Рейтинг"])
 

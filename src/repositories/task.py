@@ -1,16 +1,18 @@
-from datetime import datetime
-from fastapi import HTTPException
-from sqlalchemy import desc, select, func, exists, update, delete
-from sqlalchemy.ext.asyncio import AsyncSession
-from src.repositories.user import UserRepository
-from src.models.progress import UserProgress
-from src.models.user import User
-from src.models.task import Task, TaskSolved
-from src.repositories.achievement import AchievementRepository
-from src.models.clue import PurchasedClue
-from typing import Dict, List
 from collections import defaultdict
+from datetime import datetime
+from typing import Dict, List
+
+from fastapi import HTTPException
+from sqlalchemy import delete, desc, exists, func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from config import settings
+from src.models.clue import PurchasedClue
+from src.models.progress import UserProgress
+from src.models.task import Task, TaskSolved
+from src.models.user import User
+from src.repositories.achievement import AchievementRepository
+from src.repositories.user import UserRepository
 
 
 class TaskRepository:

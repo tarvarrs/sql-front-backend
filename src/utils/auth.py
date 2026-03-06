@@ -1,14 +1,16 @@
 from datetime import datetime, timedelta
-import jwt
 from typing import Optional
+
+import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import ValidationError
+
 from config import settings
-from src.schemas.token import TokenData
-from src.repositories.user import UserRepository
 from src.api.dependencies import get_user_repository
 from src.models.user import User
+from src.repositories.user import UserRepository
+from src.schemas.token import TokenData
 
 security = HTTPBearer()
 

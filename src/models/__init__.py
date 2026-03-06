@@ -1,13 +1,14 @@
 # Регистрируем все модели для корректной работы SQLAlchemy
-from .user import User
-from .task import Task, TaskSolved
-from src.models.user import PasswordHash
-from src.models.progress import UserProgress
 from src.models.achievement import (
     Achievement,
-    UsersAchievements,
     UserAchievementProgress,
+    UsersAchievements,
 )
+from src.models.progress import UserProgress
+from src.models.user import PasswordHash
+
+from .task import Task, TaskSolved
+from .user import User
 
 __all__ = [
     "User",

@@ -1,26 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.api.dependencies import get_task_repository
+
+from config import settings
 from database import get_db
+from src.api.dependencies import get_task_repository
 from src.models.clue import PurchasedClue
+from src.models.user import User
+from src.repositories.task import TaskRepository
 from src.schemas.task import (
     GroupedTasksResponse,
     MissionsResponse,
-    TaskClue,
-    TaskExpectedResult,
-    TaskSubmissionResult,
-    TasksCount,
     SQLRequest,
     SQLResponse,
+    TaskClue,
+    TaskExpectedResult,
+    TasksCount,
+    TaskSubmissionResult,
     TaskWithStatusResponse,
 )
-from src.repositories.task import TaskRepository
-from src.utils.auth import get_current_user
-from src.models.user import User
-from src.utils.sql_executor import SQLExecutor
 from src.utils.analytics import log_user_event
-from config import settings
+from src.utils.auth import get_current_user
+from src.utils.sql_executor import SQLExecutor
 
 router = APIRouter(prefix="/api/missions", tags=["Миссии и задачи"])
 sql_executor = SQLExecutor()

@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 import asyncio
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
-from src.api.auth import router as auth_router
-from src.api.achievement import router as achievement_router
-from src.api.profile import router as profile_router
-from src.api.task import router as task_router
-from src.api.rating import router as rating_router
-from src.api.analytics import router as analytics_router
-from src.api.user_activity import router as activity_router
-from config import settings
 
 # from prometheus_client import make_asgi_app, Counter, Histogram
 import time
+
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from config import settings
+from src.api.achievement import router as achievement_router
+from src.api.analytics import router as analytics_router
+from src.api.auth import router as auth_router
+from src.api.profile import router as profile_router
+from src.api.rating import router as rating_router
+from src.api.task import router as task_router
+from src.api.user_activity import router as activity_router
 
 app = FastAPI()
 

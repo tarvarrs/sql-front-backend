@@ -1,9 +1,10 @@
 from fastapi import Depends
+
 from database import get_db
-from src.repositories.user import UserRepository
-from src.repositories.progress import ProgressRepository
 from src.repositories.achievement import AchievementRepository
+from src.repositories.progress import ProgressRepository
 from src.repositories.task import TaskRepository
+from src.repositories.user import UserRepository
 
 
 async def get_user_repository(session=Depends(get_db)) -> UserRepository:

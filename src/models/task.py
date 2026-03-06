@@ -1,16 +1,17 @@
 from sqlalchemy import (
+    ARRAY,
     Column,
     DateTime,
+    ForeignKey,
+    Identity,
     Integer,
     String,
     Text,
-    ForeignKey,
-    Identity,
-    ARRAY,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
+
 from database import Base
 
 

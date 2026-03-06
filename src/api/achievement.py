@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
+
 from src.api.dependencies import get_achievement_repository
+from src.models.user import User
 from src.repositories.achievement import AchievementRepository
 from src.schemas.achievement import AchievementsResponse
 from src.utils.auth import get_current_user
-from src.models.user import User
 
 router = APIRouter(prefix="/api/achievements", tags=["Достижения"])
 

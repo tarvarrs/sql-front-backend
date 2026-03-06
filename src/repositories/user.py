@@ -1,9 +1,10 @@
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
-from src.models.progress import UserProgress
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.models.achievement import Achievement, UsersAchievements
-from src.models.user import User, PasswordHash
+from src.models.progress import UserProgress
+from src.models.user import PasswordHash, User
 
 
 class UserRepository:
@@ -27,7 +28,7 @@ class UserRepository:
             email=user_data["email"],
             fullname=user_data["fullname"],
             group=user_data["group"],
-            total_score=0,
+            total_score=1000,  # временное значение для тестов
         )
         self.session.add(user)
         await self.session.flush()

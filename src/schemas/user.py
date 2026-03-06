@@ -1,5 +1,6 @@
-from pydantic import BaseModel, EmailStr, StringConstraints
 from typing import Annotated
+
+from pydantic import BaseModel, EmailStr, StringConstraints
 
 
 class UserBase(BaseModel):
