@@ -31,8 +31,6 @@ async def log_user_inactive(
         session=db,
         user_id=current_user.user_id,
         event_type="user_inactive",
-        task_id=task_id,
-        payload={
-            "mission_id": mission_id,
-        },
+        task_id=task.task_global_id,
+        payload={"mission_id": mission_id, "task_id": task_id},
     )

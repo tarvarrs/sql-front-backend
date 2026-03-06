@@ -78,8 +78,8 @@ async def get_task_info(
         session=db,
         user_id=current_user.user_id,
         event_type="task_started",
-        task_id=task_id,
-        payload={"mission_id": mission_id},
+        task_id=task.task_global_id,
+        payload={"mission_id": mission_id, "task_id": task_id},
     )
 
     return {
@@ -135,8 +135,8 @@ async def purchase_clue(
         session=db,
         user_id=current_user.user_id,
         event_type="purchase_clue",
-        task_id=task_id,
-        payload={"mission_id": mission_id, "clue_type": 1},
+        task_id=task.task_global_id,
+        payload={"mission_id": mission_id, "task_id": task_id, "clue_type": 1},
     )
     return {
         "points_spent": cost,
@@ -185,8 +185,8 @@ async def purchase_expected_result(
         session=db,
         user_id=current_user.user_id,
         event_type="purchase_clue",
-        task_id=task_id,
-        payload={"mission_id": mission_id, "clue_type": 2},
+        task_id=task.task_global_id,
+        payload={"mission_id": mission_id, "task_id": task_id, "clue_type": 2},
     )
     return {
         "points_spent": cost,
@@ -217,8 +217,8 @@ async def run_sql_query(
             session=db,
             user_id=current_user.user_id,
             event_type="task_attempt",
-            task_id=task_id,
-            payload={"mission_id": mission_id},
+            task_id=task.task_global_id,
+            payload={"mission_id": mission_id, "task_id": task_id},
         )
         return await sql_executor.execute_sql(request.sql_query)
     except HTTPException as e:
@@ -255,19 +255,23 @@ async def submit_sql_query(
     is_correct = user_result["columns"] == expected_result.get(
         "columns", []
     ) and user_result["data"] == expected_result.get("data", [])
-    await log_user_event(
-        session=db,
-        user_id=current_user.user_id,
-        event_type="task_submitted",
-        task_id=task_id,
-        payload={"mission_id": mission_id, "is_correct": is_correct},
-    )
     try:
         result = await repo.check_and_reward_task(
             user_id=current_user.user_id,
             mission_id=mission_id,
             task_id=task_id,
             is_correct=is_correct,
+        )
+        await log_user_event(
+            session=db,
+            user_id=current_user.user_id,
+            event_type="task_submitted",
+            task_id=task.task_global_id,
+            payload={
+                "mission_id": mission_id,
+                "task_id": task_id,
+                "is_correct": is_correct,
+            },
         )
         return {**result, "is_correct": is_correct}
 
