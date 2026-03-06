@@ -71,4 +71,10 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     GRANT SELECT ON ALL TABLES IN SCHEMA public TO game_readonly;
     
     ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO game_readonly;
+
 EOSQL
+
+if [ -f "/backups/game_db.sql" ]; then
+    echo "Restoring game_db from SQL backup"
+    psql -U "$POSTGRES_USER" -d "game_db" -f "/backups/game_db.sql"
+fi 
