@@ -283,18 +283,18 @@ async def submit_sql_query(
         )
 
 
-@router.get(
-    "/tasks",
-    summary="Отображение всех задач со статусом решения",
-    response_model=GroupedTasksResponse,
-)
-async def get_tasks_grouped(
-    current_user: User = Depends(get_current_user),
-    repo: TaskRepository = Depends(get_task_repository),
-):
-    grouped_tasks = await repo.get_all_tasks_grouped_with_status(current_user.user_id)
+# @router.get(
+#     "/tasks",
+#     summary="Отображение всех задач со статусом решения",
+#     response_model=GroupedTasksResponse,
+# )
+# async def get_tasks_grouped(
+#     current_user: User = Depends(get_current_user),
+#     repo: TaskRepository = Depends(get_task_repository),
+# ):
+#     grouped_tasks = await repo.get_all_tasks_grouped_with_status(current_user.user_id)
 
-    return {"missions": grouped_tasks}
+#     return {"missions": grouped_tasks}
 
 
 @router.get("/", summary="Задачи со статусом решения", response_model=MissionsResponse)

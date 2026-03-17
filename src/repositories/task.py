@@ -231,7 +231,7 @@ class TaskRepository:
                     )
                 )
                 message = f"Правильно! Заработано {points} баллов"
-                await self.clear_purchased_clues(user_id, task_global_id)
+                # await self.clear_purchased_clues(user_id, task_global_id)
             else:
                 message = f"Правильно! За повторное решение баллы не начисляются"
         else:
