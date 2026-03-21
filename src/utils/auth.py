@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-import jwt
+from jwt import encode, decode, PyJWTError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import ValidationError
@@ -22,17 +22,13 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     else:
         expire = datetime.now() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
-    )
+    encoded_jwt = encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
 def decode_token(token: str) -> TokenData:
     try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
+        payload = decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         login: str = payload.get("sub")
         if login is None:
             raise HTTPException(
@@ -40,7 +36,7 @@ def decode_token(token: str) -> TokenData:
                 detail="Не удалось валидировать данные",
             )
         return TokenData(login=login)
-    except (jwt.PyJWTError, ValidationError):
+    except (PyJWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Невозможно валидировать данные",
