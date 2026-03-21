@@ -11,10 +11,8 @@ from config import settings
 
 
 class SQLExecutor:
-    def __init__(self):
-        self.engine = create_async_engine(
-            settings.GAME_DATABASE_URL, isolation_level="AUTOCOMMIT"
-        )
+    def __init__(self, db_url: str = settings.GAME_DATABASE_URL):
+        self.engine = create_async_engine(db_url, isolation_level="AUTOCOMMIT")
 
     async def execute_sql(self, sql_query: str) -> dict:
         sql_query = sql_query.rstrip(";").strip()

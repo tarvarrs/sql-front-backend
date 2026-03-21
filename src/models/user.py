@@ -30,6 +30,7 @@ class User(Base):
         "UserAchievementProgress", back_populates="user", cascade="all, delete-orphan"
     )
     solved_tasks = relationship("TaskSolved", back_populates="user")
+    quest_progress = relationship("UserQuestProgress", back_populates="user")
 
 
 class PasswordHash(Base):

@@ -24,7 +24,7 @@ from src.utils.auth import get_current_user
 from src.utils.sql_executor import SQLExecutor
 
 router = APIRouter(prefix="/api/missions", tags=["Миссии и задачи"])
-sql_executor = SQLExecutor()
+sql_executor = SQLExecutor(settings.GAME_DATABASE_URL)
 
 
 @router.get(
@@ -281,20 +281,6 @@ async def submit_sql_query(
             status_code=400,
             detail="Некорректный mission_id: должен быть от 0 до 2 включительно",
         )
-
-
-# @router.get(
-#     "/tasks",
-#     summary="Отображение всех задач со статусом решения",
-#     response_model=GroupedTasksResponse,
-# )
-# async def get_tasks_grouped(
-#     current_user: User = Depends(get_current_user),
-#     repo: TaskRepository = Depends(get_task_repository),
-# ):
-#     grouped_tasks = await repo.get_all_tasks_grouped_with_status(current_user.user_id)
-
-#     return {"missions": grouped_tasks}
 
 
 @router.get("/", summary="Задачи со статусом решения", response_model=MissionsResponse)

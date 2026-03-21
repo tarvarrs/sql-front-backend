@@ -1,0 +1,147 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+import re
+
+from config import settings
+from database import get_db
+from src.models.user import User
+from src.repositories.quest import QuestRepository
+from src.schemas.quest import (
+    QuestProgressResponse,
+    QuestRunRequest,
+    QuestSubmitRequest,
+    QuestSubmitResponse,
+    SQLResponse,
+)
+from src.utils.auth import get_current_user
+from src.utils.sql_executor import SQLExecutor
+
+router = APIRouter(prefix="/api/quests", tags=["Квесты"])
+sql_executor = SQLExecutor(settings.QUEST_DATABASE_URL)
+
+
+def get_quest_repository(db: AsyncSession = Depends(get_db)) -> QuestRepository:
+    return QuestRepository(db)
+
+
+def _extract_update_value(sql_query: str) -> str:
+    """Упрощенный парсер для извлечения значения из UPDATE запроса."""
+    match = re.search(
+        r"SET\s+\w+\s*=\s*'?(.*?)'?\s*(?:WHERE|$|;)", sql_query, re.IGNORECASE
+    )
+    if match:
+        return match.group(1).strip()
+    return ""
+
+
+@router.get(
+    "/{quest_id}/progress",
+    summary="Инициализация или продолжение квеста",
+    response_model=QuestProgressResponse,
+)
+async def get_quest_progress(
+    quest_id: str,
+    current_user: User = Depends(get_current_user),
+    repo: QuestRepository = Depends(get_quest_repository),
+):
+    try:
+        scene_data = await repo.get_user_current_scene(current_user.user_id, quest_id)
+    except HTTPException as e:
+        if e.status_code == 404:
+            await repo.start_quest(current_user.user_id, quest_id)
+            scene_data = await repo.get_user_current_scene(
+                current_user.user_id, quest_id
+            )
+        else:
+            raise e
+
+    return {
+        "scene_id": scene_data["scene_id"],
+        "legend": scene_data["legend"],
+        "task": scene_data["task"],
+        "has_clue": scene_data["has_clue"],
+    }
+
+
+@router.post(
+    "/{quest_id}/run",
+    summary="Выполнение SQL запроса в квесте",
+    response_model=SQLResponse,
+)
+async def run_quest_sql(
+    quest_id: str,
+    request: QuestRunRequest,
+    current_user: User = Depends(get_current_user),
+    repo: QuestRepository = Depends(get_quest_repository),
+):
+    scene_data = await repo.get_user_current_scene(current_user.user_id, quest_id)
+    if scene_data["scene_id"] != request.scene_id:
+        raise HTTPException(status_code=400, detail="Неверная сцена для выполнения")
+
+    try:
+        if scene_data["is_branching"]:
+            return {
+                "columns": ["status"],
+                "data": [["UPDATE successful"]],
+                "row_count": 1,
+            }
+        return await sql_executor.execute_sql(request.sql_query)
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=400, detail=f"Ошибка выполнения: {str(e.detail)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}"
+        )
+
+
+@router.post(
+    "/{quest_id}/submit",
+    summary="Отправка решения квеста на проверку",
+    response_model=QuestSubmitResponse,
+)
+async def submit_quest_solution(
+    quest_id: str,
+    request: QuestSubmitRequest,
+    current_user: User = Depends(get_current_user),
+    repo: QuestRepository = Depends(get_quest_repository),
+):
+    scene = await repo.get_user_current_scene(current_user.user_id, quest_id)
+
+    user_answer_value = ""
+    is_correct = False
+
+    if scene["is_branching"]:
+        user_answer_value = _extract_update_value(request.sql_query)
+        is_correct = user_answer_value in scene.get("branches", {})
+    else:
+        if scene.get("expected_result"):
+            user_result = await sql_executor.execute_sql(request.sql_query)
+            expected = scene["expected_result"]
+            is_correct = user_result["columns"] == expected.get(
+                "columns", []
+            ) and user_result["data"] == expected.get("data", [])
+        else:
+            is_correct = True
+
+    is_quest_completed = False
+
+    if is_correct:
+        result = await repo.submit_answer(
+            user_id=current_user.user_id,
+            quest_id=quest_id,
+            user_answer=user_answer_value,
+            is_correct=is_correct,
+        )
+        is_quest_completed = result.get("status") == "completed"
+
+    return {
+        "is_correct": is_correct,
+        "points": {
+            "earned": 10 if is_correct else 0,  # TODO: add points operations
+            "penalty": 0 if is_correct else 2,
+        },
+        "is_quest_completed": is_quest_completed,
+        "awarded_achievements": [],  # TODO: integrate achievements with quest module
+    }
