@@ -60,21 +60,43 @@ echo "Creating game_db and setting up restricted user"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     CREATE DATABASE game_db;
     
-    CREATE USER game_readonly WITH PASSWORD '${GAME_DB_PASSWORD}';
+    CREATE USER sql_runner WITH PASSWORD '${RUNNER_PASSWORD}';
     
     \c game_db
     
-    GRANT CONNECT ON DATABASE game_db TO game_readonly;
+    GRANT CONNECT ON DATABASE game_db TO sql_runner;
     
-    GRANT USAGE ON SCHEMA public TO game_readonly;
+    GRANT USAGE ON SCHEMA public TO sql_runner;
     
-    GRANT SELECT ON ALL TABLES IN SCHEMA public TO game_readonly;
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO sql_runner;
     
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO game_readonly;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO sql_runner;
 
 EOSQL
 
 if [ -f "/backups/game_db.sql" ]; then
     echo "Restoring game_db from SQL backup"
     psql -U "$POSTGRES_USER" -d "game_db" -f "/backups/game_db.sql"
+fi 
+
+
+echo "Creating quest_db"
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+    CREATE DATABASE quest_db;
+    
+    \c quest_db
+    
+    GRANT CONNECT ON DATABASE quest_db TO sql_runner;
+    
+    GRANT USAGE ON SCHEMA public TO sql_runner;
+    
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO sql_runner;
+    
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO sql_runner;
+
+EOSQL
+
+if [ -f "/backups/quest_db.sql" ]; then
+    echo "Creating quest_db from SQL"
+    psql -U "$POSTGRES_USER" -d "quest_db" -f "/backups/quest_db.sql"
 fi 
