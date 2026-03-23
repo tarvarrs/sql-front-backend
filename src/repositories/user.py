@@ -19,7 +19,7 @@ class UserRepository:
         hashed_password = bcrypt.hashpw(
             password.encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
-        required_fields = ["login", "email", "fullname", "group"]
+        required_fields = ["login", "email"]
         for field in required_fields:
             if field not in user_data or not user_data[field]:
                 raise KeyError(field)
