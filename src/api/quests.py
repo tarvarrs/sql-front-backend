@@ -17,6 +17,7 @@ from src.schemas.quest import (
 from src.utils.auth import get_current_user
 from src.utils.sql_executor import SQLExecutor
 from src.utils.quest_loader import QuestLoader
+from src.utils.scoring_service import ScoringService
 
 router = APIRouter(prefix="/api/quests", tags=["Квесты"])
 sql_executor = SQLExecutor(settings.QUEST_DATABASE_URL)
@@ -130,6 +131,7 @@ async def submit_quest_solution(
     request: QuestSubmitRequest,
     current_user: User = Depends(get_current_user),
     repo: QuestRepository = Depends(get_quest_repository),
+    db: AsyncSession = Depends(get_db),
 ):
     scene = await repo.get_user_current_scene(current_user.user_id, quest_id)
 
@@ -151,6 +153,8 @@ async def submit_quest_solution(
 
     is_quest_completed = False
 
+    scoring_service = ScoringService(db)
+
     if is_correct:
         result = await repo.submit_answer(
             user_id=current_user.user_id,
@@ -158,13 +162,17 @@ async def submit_quest_solution(
             user_answer=user_answer_value,
             is_correct=is_correct,
         )
+        await scoring_service.add_points(current_user.user_id, 100)
         is_quest_completed = result.get("status") == "completed"
+    else:
+        await scoring_service.deduct_points(current_user.user_id, 10)
+    await db.commit()
 
     return {
         "is_correct": is_correct,
         "points": {
-            "earned": 10 if is_correct else 0,  # TODO: add points operations
-            "penalty": 0 if is_correct else 2,
+            "earned": 100 if is_correct else 0,
+            "penalty": 0 if is_correct else 10,
         },
         "is_quest_completed": is_quest_completed,
         "awarded_achievements": [],  # TODO: integrate achievements with quest module
