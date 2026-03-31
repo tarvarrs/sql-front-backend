@@ -37,7 +37,17 @@ class QuestSubmitResponse(BaseModel):
     awarded_achievements: List[AchievementAward] = []
 
 
-# Переиспользуем схемы из вашего проекта для SQL
+class QuestItem(BaseModel):
+    id: str
+    title: str
+    description: str
+    is_completed: bool
+
+
+class QuestsListResponse(BaseModel):
+    quests: List[QuestItem]
+
+
 class SQLResponse(BaseModel):
     columns: List[str]
     data: List[List[Any]]

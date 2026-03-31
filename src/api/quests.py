@@ -12,9 +12,11 @@ from src.schemas.quest import (
     QuestSubmitRequest,
     QuestSubmitResponse,
     SQLResponse,
+    QuestsListResponse,
 )
 from src.utils.auth import get_current_user
 from src.utils.sql_executor import SQLExecutor
+from src.utils.quest_loader import QuestLoader
 
 router = APIRouter(prefix="/api/quests", tags=["Квесты"])
 sql_executor = SQLExecutor(settings.QUEST_DATABASE_URL)
@@ -32,6 +34,30 @@ def _extract_update_value(sql_query: str) -> str:
     if match:
         return match.group(1).strip()
     return ""
+
+@router.get(
+    "",
+    summary="Получение списка всех квестов",
+    response_model=QuestsListResponse,
+)
+async def get_all_quests(
+    current_user: User = Depends(get_current_user),
+    repo: QuestRepository = Depends(get_quest_repository),
+):
+    all_quests = QuestLoader.get_all_quests()
+
+    completed_quests = await repo.get_user_completed_quests(current_user.user_id)
+
+    quests_response = []
+    for q in all_quests:
+        quests_response.append({
+            "id": q["id"],
+            "title": q["title"],
+            "description": q["description"],
+            "is_completed": q["id"] in completed_quests
+        })
+
+    return {"quests": quests_response}
 
 
 @router.get(
@@ -80,11 +106,9 @@ async def run_quest_sql(
 
     try:
         if scene_data["is_branching"]:
-            return {
-                "columns": ["status"],
-                "data": [["UPDATE successful"]],
-                "row_count": 1,
-            }
+            raise HTTPException(
+            status_code=403, detail=f"Пока низя"
+            )
         return await sql_executor.execute_sql(request.sql_query)
     except HTTPException as e:
         raise HTTPException(

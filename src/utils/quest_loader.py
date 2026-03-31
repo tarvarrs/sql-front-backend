@@ -31,3 +31,22 @@ class QuestLoader:
         if not scene:
             raise HTTPException(status_code=404, detail="Сцена не найдена")
         return scene
+    
+    @classmethod
+    def get_all_quests(cls) -> list[dict]:
+        """Возвращает информацию о всех доступных квестах"""
+        quests = []
+        if not cls._quests_dir.exists():
+            return quests
+        for file_path in cls._quests_dir.glob("*.json"):
+            quest_id = file_path.stem
+            try:
+                quest_data = cls.get_quest(quest_id)
+                quests.append({
+                    "id": quest_id,
+                    "title": quest_data.get("title", "Без названия"),
+                    "description": quest_data.get("description", "Без описания")
+                })
+            except Exception:
+                continue
+        return quests

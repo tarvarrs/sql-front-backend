@@ -165,3 +165,16 @@ class QuestRepository:
         json_path = Path(f"quests/{quest_id}.json")
         if not json_path.exists():
             raise HTTPException(status_code=404, detail="Квест не найден")
+
+    async def get_user_completed_quests(self, user_id: int) -> set[str]:
+        """Возвращает множество ID завершенных квестов для пользователя."""
+        result = await self.session.execute(
+            select(UserQuestProgress.quest_id)
+            .where(
+                and_(
+                    UserQuestProgress.user_id == user_id,
+                    UserQuestProgress.completed_at.isnot(None)
+                )
+            )
+        )
+        return set(result.scalars().all())
